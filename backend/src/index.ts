@@ -18,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://187.33.155.127:5173"],
     methods: ["GET", "POST"]
   }
 });
@@ -49,7 +49,7 @@ app.use(limiter);
 
 // CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://187.33.155.127:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -166,8 +166,9 @@ app.use((req, res) => {
 });
 
 server.listen(PORT, async () => {
-  console.log(`🚀 Servidor MarVera corriendo en puerto ${PORT}`);
+  console.log(`🚀 Servidor MarVera corriendo en puerto ${PORT} en todas las interfaces`);
   console.log(`📊 API disponible en http://localhost:${PORT}/api`);
+  console.log(`🌐 API disponible externamente en http://187.33.155.127:${PORT}/api`);
   console.log(`🔌 Socket.IO habilitado para tracking en tiempo real`);
   
   // Crear usuario admin por defecto
