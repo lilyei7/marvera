@@ -13,7 +13,7 @@ import { addProduct, updateProduct, deleteProduct } from '../store/slices/produc
 
 const AdminPanel: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { products } = useAppSelector((state: any) => state.products);
+  const { items: products } = useAppSelector((state: any) => state.products);
   const { user } = useAppSelector((state: any) => state.auth);
   
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users'>('dashboard');
@@ -112,8 +112,11 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Asegurar que products está definido y es un array
+  const safeProducts = Array.isArray(products) ? products : [];
+
   const stats = {
-    totalProducts: products.length,
+    totalProducts: safeProducts.length,
     totalOrders: 24, // Simulado
     totalUsers: 156, // Simulado
     totalRevenue: 12543.50 // Simulado
@@ -130,94 +133,94 @@ const AdminPanel: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-light">
       {/* Header */}
       <div className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <div className="text-4xl animate-float">👨‍💼</div>
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 sm:py-4 lg:py-6 gap-3 sm:gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="text-2xl sm:text-3xl lg:text-4xl animate-float">👨‍💼</div>
               <div>
-                <h1 className="text-3xl font-bold text-primary">Panel de Administración</h1>
-                <p className="text-gray-600">Bienvenido, {user.firstName} {user.lastName}</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary leading-tight">Panel de Administración</h1>
+                <p className="text-gray-600 text-xs sm:text-sm lg:text-base">Bienvenido, {user.firstName} {user.lastName}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="text-right">
-                <div className="text-sm text-gray-500">Admin desde</div>
-                <div className="font-semibold text-primary">MarVera 2024</div>
+                <div className="text-xs sm:text-sm text-gray-500">Admin desde</div>
+                <div className="font-semibold text-primary text-xs sm:text-sm lg:text-base">MarVera 2024</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
         {/* Tabs Navigation */}
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl mb-8">
+        <div className="flex flex-wrap sm:flex-nowrap overflow-x-auto space-x-1 bg-gray-100 p-1 rounded-lg sm:rounded-xl mb-4 sm:mb-6 lg:mb-8">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-xs sm:text-sm ${
                 activeTab === tab.id
                   ? 'bg-white text-primary shadow-md transform scale-105'
                   : 'text-gray-500 hover:text-primary hover:bg-white/50'
               }`}
             >
-              <tab.icon className="h-5 w-5" />
-              <span>{tab.label}</span>
+              <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden xs:inline">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* Dashboard */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-fade-in">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover-lift transition-all duration-300">
-                <div className="flex items-center justify-between">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md sm:shadow-lg p-3 sm:p-4 lg:p-6 hover-lift transition-all duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Productos</p>
-                    <p className="text-3xl font-bold text-primary">{stats.totalProducts}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">Total Productos</p>
+                    <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-primary">{stats.totalProducts}</p>
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <ShoppingBagIcon className="h-8 w-8 text-primary" />
+                  <div className="bg-primary/10 p-2 sm:p-3 rounded-full">
+                    <ShoppingBagIcon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-primary" />
                   </div>
                 </div>
-                <div className="mt-4 flex items-center text-sm">
+                <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                   <span className="text-green-600 font-medium">+12%</span>
-                  <span className="text-gray-500 ml-2">vs mes anterior</span>
+                  <span className="text-gray-500 ml-1 sm:ml-2">vs mes anterior</span>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover-lift transition-all duration-300">
-                <div className="flex items-center justify-between">
+              <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md sm:shadow-lg p-3 sm:p-4 lg:p-6 hover-lift transition-all duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Pedidos</p>
-                    <p className="text-3xl font-bold text-secondary">{stats.totalOrders}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">Pedidos</p>
+                    <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-secondary">{stats.totalOrders}</p>
                   </div>
-                  <div className="bg-secondary/10 p-3 rounded-full">
-                    <CurrencyDollarIcon className="h-8 w-8 text-secondary" />
+                  <div className="bg-secondary/10 p-2 sm:p-3 rounded-full">
+                    <CurrencyDollarIcon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-secondary" />
                   </div>
                 </div>
-                <div className="mt-4 flex items-center text-sm">
+                <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                   <span className="text-green-600 font-medium">+8%</span>
-                  <span className="text-gray-500 ml-2">vs mes anterior</span>
+                  <span className="text-gray-500 ml-1 sm:ml-2">vs mes anterior</span>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover-lift transition-all duration-300">
-                <div className="flex items-center justify-between">
+              <div className="bg-white rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md sm:shadow-lg p-3 sm:p-4 lg:p-6 hover-lift transition-all duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Usuarios</p>
-                    <p className="text-3xl font-bold text-accent">{stats.totalUsers}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">Usuarios</p>
+                    <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-accent">{stats.totalUsers}</p>
                   </div>
-                  <div className="bg-accent/10 p-3 rounded-full">
-                    <UsersIcon className="h-8 w-8 text-accent" />
+                  <div className="bg-accent/10 p-2 sm:p-3 rounded-full">
+                    <UsersIcon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-accent" />
                   </div>
                 </div>
-                <div className="mt-4 flex items-center text-sm">
+                <div className="mt-2 sm:mt-3 lg:mt-4 flex items-center text-xs sm:text-sm">
                   <span className="text-green-600 font-medium">+24%</span>
-                  <span className="text-gray-500 ml-2">vs mes anterior</span>
+                  <span className="text-gray-500 ml-1 sm:ml-2">vs mes anterior</span>
                 </div>
               </div>
 
@@ -279,7 +282,7 @@ const AdminPanel: React.FC = () => {
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product: any, index: number) => (
+              {safeProducts.map((product: any, index: number) => (
                 <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover-lift transition-all duration-300 animate-fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                   <div className="relative">
                     <img

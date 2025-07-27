@@ -75,32 +75,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-card rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto transform transition-all duration-300 animate-bounce-gentle hover-lift border border-default">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-primary animate-fade-in">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in p-2 sm:p-4">
+      <div className="bg-card rounded-xl sm:rounded-2xl shadow-xl sm:shadow-2xl p-4 sm:p-6 lg:p-8 max-w-xs xs:max-w-sm sm:max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto transform transition-all duration-300 animate-bounce-gentle hover-lift border border-default">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary animate-fade-in">
             {isLogin ? '🌊 Iniciar Sesión' : '🦐 Crear Cuenta'}
           </h2>
           <button
             onClick={onClose}
-            className="text-muted hover:text-main text-2xl hover:scale-110 transition-all duration-200 hover:bg-light rounded-full w-8 h-8 flex items-center justify-center"
+            className="text-muted hover:text-main text-xl sm:text-2xl hover:scale-110 transition-all duration-200 hover:bg-light rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
           >
             ×
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg animate-shake">
+          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-100 border border-red-400 text-red-700 rounded-md sm:rounded-lg animate-shake text-xs sm:text-sm">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {!isLogin && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-main mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-main mb-1">
                     Nombre
                   </label>
                   <input
@@ -109,11 +109,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     required={!isLogin}
-                    className="w-full px-3 py-2 border border-default rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-main"
+                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-default rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-main text-sm sm:text-base"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-main mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-main mb-1">
                     Apellido
                   </label>
                   <input

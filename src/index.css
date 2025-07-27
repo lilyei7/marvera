@@ -123,6 +123,25 @@ textarea:focus {
   animation: float 6s ease-in-out infinite;
 }
 
+/* Hover Effect Lift */
+.hover-lift {
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Scale effects */
+.hover-scale {
+  transition: transform 0.3s ease-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
 @keyframes shimmer {
   0% { background-position: -468px 0; }
   100% { background-position: 468px 0; }
@@ -381,9 +400,37 @@ textarea:focus {
   right: -20px;
   top: 50%;
   transform: translateY(-50%);
-  color: #10b981;
+  color: green;
   font-weight: bold;
-  animation: success-ping 0.6s ease-out;
+}
+
+/* Extra Small (xs) Breakpoint - 475px and up */
+@media (min-width: 475px) {
+  .xs\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .xs\:w-56 { width: 14rem; }
+  .xs\:h-56 { height: 14rem; }
+  .xs\:w-24 { width: 6rem; }
+  .xs\:h-18 { height: 4.5rem; }
+  
+  .xs\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+  .xs\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+  .xs\:text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+  
+  .xs\:inset-2\.5 { inset: 0.625rem; }
+  .xs\:top-3 { top: 0.75rem; }
+  .xs\:right-3 { right: 0.75rem; }
+  .xs\:bottom-3 { bottom: 0.75rem; }
+  .xs\:left-3 { left: 0.75rem; }
+  .xs\:top-5 { top: 1.25rem; }
+  .xs\:left-4 { left: 1rem; }
+  .xs\:right-4 { right: 1rem; }
+  
+  .xs\:h-36 { height: 9rem; }
+  .xs\:inline { display: inline; }
+  .xs\:max-w-sm { max-width: 24rem; }
 }
 
 /* Botones con gradientes suaves */

@@ -31,48 +31,49 @@ const Navigation: React.FC = () => {
 
   return (
     <>
-      <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <nav className="bg-card shadow-lg border-b border-default sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group">
-              <div className="text-2xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-                🌊 MarVera
+            <Link to="/" className="flex items-center space-x-1 sm:space-x-2 group flex-shrink-0">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
+                <span className="hidden xs:inline">🌊 MarVera</span>
+                <span className="xs:hidden">🌊 MV</span>
               </div>
             </Link>
 
-            {/* Barra de búsqueda */}
-            <div className="flex-1 max-w-lg mx-8">
-              <div className="relative group">
+            {/* Barra de búsqueda - Hidden on mobile */}
+            <div className="hidden md:flex flex-1 max-w-sm lg:max-w-lg mx-4 lg:mx-8">
+              <div className="relative group w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors duration-200" />
+                  <MagnifyingGlassIcon className="h-4 w-4 lg:h-5 lg:w-5 text-muted group-focus-within:text-primary transition-colors duration-200" />
                 </div>
                 <input
                   type="text"
-                  placeholder="Buscar mariscos frescos..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 hover:border-accent hover:shadow-md"
+                  placeholder="Buscar mariscos..."
+                  className="block w-full pl-8 lg:pl-10 pr-3 py-2 text-sm border border-default rounded-lg leading-5 bg-background placeholder-muted focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 hover:border-accent hover:shadow-md text-main"
                 />
               </div>
             </div>
 
             {/* Menú derecha */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-4">
               {/* Usuario */}
               <div className="relative">
                 {isAuthenticated && user ? (
                   <div className="relative">
                     <button
                       onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center space-x-2 text-gray-700 hover:text-primary px-4 py-2 rounded-lg hover:bg-light transition-all duration-200 group border border-transparent hover:border-primary"
+                      className="flex items-center space-x-1 lg:space-x-2 text-main hover:text-primary px-2 sm:px-3 lg:px-4 py-2 rounded-lg hover:bg-light hover:bg-opacity-50 transition-all duration-200 group border border-transparent hover:border-primary"
                     >
-                      <UserIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
-                      <span className="hidden md:block font-medium">{user.firstName}</span>
+                      <UserIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
+                      <span className="hidden lg:block font-medium text-sm">{user.firstName}</span>
                     </button>
                     {showUserMenu && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100 animate-fade-in">
+                      <div className="absolute right-0 mt-2 w-44 sm:w-48 bg-card rounded-md shadow-lg py-1 z-50 border border-default animate-fade-in">
                         <Link
                           to="/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-light transition-colors duration-200"
+                          className="block px-4 py-2 text-sm text-main hover:bg-light hover:bg-opacity-50 transition-colors duration-200"
                           onClick={() => setShowUserMenu(false)}
                         >
                           Mi Perfil
@@ -113,12 +114,12 @@ const Navigation: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="flex items-center space-x-1 text-gray-700 hover:text-primary px-4 py-2 rounded-lg hover:bg-light transition-all duration-200 group border border-transparent hover:border-primary"
+                    className="flex items-center space-x-1 text-main hover:text-primary px-2 sm:px-3 lg:px-4 py-2 rounded-lg hover:bg-light hover:bg-opacity-50 transition-all duration-200 group border border-transparent hover:border-primary"
                     disabled={isLoading}
                   >
-                    <UserIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
-                    <span className="hidden md:block font-medium">
-                      {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
+                    <UserIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="hidden xl:block font-medium text-sm">
+                      {isLoading ? 'Verificando...' : 'Login'}
                     </span>
                   </button>
                 )}
@@ -127,15 +128,15 @@ const Navigation: React.FC = () => {
               {/* Modo Oscuro */}
               <button
                 onClick={toggleDarkMode}
-                className="flex items-center space-x-1 text-gray-700 hover:text-primary px-4 py-2 rounded-lg hover:bg-light transition-all duration-200 group border border-transparent hover:border-primary"
+                className="flex items-center space-x-1 text-main hover:text-primary px-2 sm:px-3 lg:px-4 py-2 rounded-lg hover:bg-light hover:bg-opacity-50 transition-all duration-200 group border border-transparent hover:border-primary"
                 title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               >
                 {isDarkMode ? (
-                  <SunIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+                  <SunIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
                 ) : (
-                  <MoonIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+                  <MoonIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
                 )}
-                <span className="hidden lg:block font-medium">
+                <span className="hidden xl:block font-medium text-sm">
                   {isDarkMode ? 'Claro' : 'Oscuro'}
                 </span>
               </button>
@@ -143,17 +144,31 @@ const Navigation: React.FC = () => {
               {/* Carrito */}
               <button
                 onClick={handleCartClick}
-                className="relative flex items-center space-x-1 text-gray-700 hover:text-primary px-4 py-2 rounded-lg hover:bg-light transition-all duration-200 group border border-transparent hover:border-primary hover:shadow-md"
+                className="relative flex items-center space-x-1 text-main hover:text-primary px-2 sm:px-3 lg:px-4 py-2 rounded-lg hover:bg-light hover:bg-opacity-50 transition-all duration-200 group border border-transparent hover:border-primary hover:shadow-md"
               >
-                <ShoppingCartIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+                <ShoppingCartIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse group-hover:animate-bounce">
-                    {itemCount}
+                  <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center font-bold animate-pulse group-hover:animate-bounce text-xs">
+                    {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
-                <span className="hidden md:block font-medium">Carrito</span>
+                <span className="hidden lg:block font-medium text-sm">Carrito</span>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Search Bar */}
+        <div className="md:hidden px-2 sm:px-4 pb-3">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="h-4 w-4 text-muted group-focus-within:text-primary transition-colors duration-200" />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar mariscos..."
+              className="block w-full pl-9 pr-3 py-2 text-sm border border-default rounded-lg leading-5 bg-background placeholder-muted focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 hover:border-accent hover:shadow-md text-main"
+            />
           </div>
         </div>
 
