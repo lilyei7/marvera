@@ -62,12 +62,21 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
         const updatedImages = [...images, ...newImages];
         onChange(updatedImages);
       } else {
-        const errorData = await response.json();
-        alert(errorData.message || 'Error al subir las imágenes');
+        // Manejar diferentes tipos de error
+        if (response.status === 413) {
+          alert('❌ Archivo demasiado grande. Máximo 25MB por imagen.');
+        } else {
+          try {
+            const errorData = await response.json();
+            alert(errorData.message || 'Error al subir las imágenes');
+          } catch {
+            alert(`❌ Error del servidor (${response.status}). Intenta con archivos más pequeños.`);
+          }
+        }
       }
     } catch (error) {
       console.error('Error uploading files:', error);
-      alert('Error de conexión al subir las imágenes');
+      alert('❌ Error de conexión al subir las imágenes. Verifica tu conexión a internet.');
     } finally {
       setUploading(false);
       // Limpiar el input
