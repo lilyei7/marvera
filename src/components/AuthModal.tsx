@@ -76,14 +76,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto transform transition-all duration-300 animate-bounce-gentle hover-lift">
+      <div className="bg-card rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto transform transition-all duration-300 animate-bounce-gentle hover-lift border border-default">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-primary animate-fade-in">
             {isLogin ? '🌊 Iniciar Sesión' : '🦐 Crear Cuenta'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl hover:scale-110 transition-all duration-200 hover:bg-light rounded-full w-8 h-8 flex items-center justify-center"
+            className="text-muted hover:text-main text-2xl hover:scale-110 transition-all duration-200 hover:bg-light rounded-full w-8 h-8 flex items-center justify-center"
           >
             ×
           </button>
@@ -100,7 +100,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-main mb-1">
                     Nombre
                   </label>
                   <input
@@ -109,11 +109,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     required={!isLogin}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-3 py-2 border border-default rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-main"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-main mb-1">
                     Apellido
                   </label>
                   <input
@@ -122,7 +122,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     required={!isLogin}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-3 py-2 border border-default rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-main"
                   />
                 </div>
               </div>

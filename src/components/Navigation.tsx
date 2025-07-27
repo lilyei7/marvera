@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleCart } from '../store/slices/cartSlice';
 import { verifyToken, logoutUser } from '../store/slices/authSlice';
+import { useDarkMode } from '../hooks/useDarkMode';
 import AuthModal from './AuthModal';
 
 const Navigation: React.FC = () => {
@@ -13,6 +14,7 @@ const Navigation: React.FC = () => {
   const itemCount = cartState?.itemCount || 0;
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   useEffect(() => {
     dispatch(verifyToken());
@@ -121,6 +123,22 @@ const Navigation: React.FC = () => {
                   </button>
                 )}
               </div>
+
+              {/* Modo Oscuro */}
+              <button
+                onClick={toggleDarkMode}
+                className="flex items-center space-x-1 text-gray-700 hover:text-primary px-4 py-2 rounded-lg hover:bg-light transition-all duration-200 group border border-transparent hover:border-primary"
+                title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              >
+                {isDarkMode ? (
+                  <SunIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+                ) : (
+                  <MoonIcon className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+                )}
+                <span className="hidden lg:block font-medium">
+                  {isDarkMode ? 'Claro' : 'Oscuro'}
+                </span>
+              </button>
 
               {/* Carrito */}
               <button

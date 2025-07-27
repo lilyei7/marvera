@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import AdminPanel from './components/AdminPanel';
+import AdminAccess from './components/AdminAccess';
 import NotificationManager from './components/NotificationManager';
 import './App.css';
 
@@ -26,6 +27,7 @@ function AppContent() {
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin-access" element={<AdminAccess />} />
           </Routes>
         </main>
         <Footer />
