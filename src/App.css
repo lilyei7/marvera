@@ -1,0 +1,14 @@
+/* Estilos específicos de la aplicación MarVera */
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Asegurar que los componentes principales ocupen todo el espacio */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

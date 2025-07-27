@@ -1,0 +1,85 @@
+/* Utilidades responsivas adicionales para MarVera */
+
+/* Botones responsivos usando la nueva paleta */
+.btn-primary {
+  background-color: #005187;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #4d82bc;
+}
+
+@media (min-width: 640px) {
+  .btn-primary {
+    font-size: 1rem;
+  }
+}
+
+.btn-secondary {
+  background-color: #4d82bc;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #005187;
+}
+
+@media (min-width: 640px) {
+  .btn-secondary {
+    font-size: 1rem;
+  }
+}
+
+.btn-outline {
+  @apply border-2 border-primary text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-lg text-sm sm:text-base transition duration-200;
+}
+
+/* Headers responsivos */
+.hero-title {
+  @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-primary;
+}
+
+.section-title {
+  @apply text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4 lg:mb-6;
+}
+
+/* Inputs responsivos */
+.input-primary {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm sm:text-base;
+}
+
+/* Cards responsivos */
+.card {
+  @apply bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 p-4 lg:p-6;
+}
+
+/* Layouts responsivos */
+.container-responsive {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.grid-responsive {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6;
+}
+
+/* Fondos usando la nueva paleta */
+.bg-section-light {
+  @apply bg-light;
+}
+
+.bg-section-primary {
+  @apply bg-primary;
+}
+
+.bg-section-accent {
+  @apply bg-accent;
+}
