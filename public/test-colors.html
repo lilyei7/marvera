@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Colores MarVera</title>
+    <style>
+        /* Definir colores directamente para asegurar que funcionen */
+        .bg-primary { background-color: #005187 !important; }
+        .bg-secondary { background-color: #4d82bc !important; }
+        .bg-accent { background-color: #84b6f4 !important; }
+        .bg-light { background-color: #c4dafa !important; }
+        .bg-button { background-color: #4d82bc !important; }
+        .text-white { color: white !important; }
+        .text-primary { color: #005187 !important; }
+        
+        button {
+            padding: 12px 24px;
+            margin: 8px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .hover\\:bg-primary:hover { background-color: #005187 !important; }
+        .hover\\:bg-secondary:hover { background-color: #4d82bc !important; }
+    </style>
+</head>
+<body>
+    <div style="padding: 20px; font-family: Montserrat, sans-serif;">
+        <h1 style="text-align: center; color: #005187;">🧪 Test de Colores MarVera</h1>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0;">
+            <button class="bg-primary text-white">bg-primary</button>
+            <button class="bg-secondary text-white">bg-secondary</button>
+            <button class="bg-button text-white">bg-button</button>
+            <button class="bg-accent text-white">bg-accent</button>
+            <button class="bg-light text-primary">bg-light</button>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <h2 style="color: #005187;">Colores CSS Direct:</h2>
+            <button style="background-color: #005187; color: white;">#005187 (Primary)</button>
+            <button style="background-color: #4d82bc; color: white;">#4d82bc (Secondary/Button)</button>
+            <button style="background-color: #84b6f4; color: white;">#84b6f4 (Accent)</button>
+            <button style="background-color: #c4dafa; color: #005187;">#c4dafa (Light)</button>
+        </div>
+        
+        <div style="background-color: #f0f0f0; padding: 16px; border-radius: 8px; margin-top: 20px;">
+            <h3>Diagnóstico:</h3>
+            <p>Si ves botones azules arriba: ✅ Los colores funcionan</p>
+            <p>Si ves botones negros/grises: ❌ Hay problema con Tailwind</p>
+        </div>
+    </div>
+</body>
+</html>

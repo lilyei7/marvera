@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { 
   XMarkIcon, 
-  CreditCardIcon, 
-  TruckIcon, 
-  MapPinIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearCart } from '../store/slices/cartSlice';
@@ -20,552 +19,451 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose }) => {
   const { items, total } = useAppSelector((state: any) => state.cart);
   const { user } = useAppSelector((state: any) => state.auth);
   
-  const [step, setStep] = useState(1); // 1: Info, 2: Payment, 3: Confirmation
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   
   const [formData, setFormData] = useState({
-    // Información personal
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    
-    // Dirección de entrega
     address: '',
     city: '',
     state: '',
     zipCode: '',
     deliveryInstructions: '',
-    
-    // Información de pago
     cardNumber: '',
     expiryDate: '',
     cvv: '',
     cardholderName: '',
-    
-    // Opciones de entrega
-    deliveryType: 'standard', // standard, express, scheduled
+    deliveryType: 'standard',
     scheduledDate: '',
     scheduledTime: ''
   });
 
-  if (!isOpen) return null;
+  const deliveryOptions = {
+    standard: { name: '🚚 Entrega Estándar', time: '2-3 días', price: 0 },
+    express: { name: '⚡ Entrega Express', time: '24 horas', price: 150 },
+    scheduled: { name: '📅 Entrega Programada', time: 'Fecha elegida', price: 50 }
+  };
+
+  const deliveryFee = deliveryOptions[formData.deliveryType as keyof typeof deliveryOptions].price;
+  const tax = total * 0.16;
+  const finalTotal = total + deliveryFee + tax;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleNextStep = () => {
-    if (step < 3) {
-      setStep(step + 1);
-    }
+    if (step < 3) setStep(step + 1);
   };
 
   const handlePrevStep = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
+    if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmitOrder = async () => {
+  const handleSubmit = async () => {
     setLoading(true);
-    
-    // Simular proceso de pago
+    // Simular procesamiento
     setTimeout(() => {
       setLoading(false);
       setOrderCompleted(true);
-      setStep(3);
-      
-      // Limpiar carrito después de completar pedido
+      dispatch(clearCart());
       setTimeout(() => {
-        dispatch(clearCart());
         onClose();
-        setOrderCompleted(false);
         setStep(1);
+        setOrderCompleted(false);
       }, 3000);
     }, 2000);
   };
 
-  const deliveryFee = total > 100 ? 0 : 12.99;
-  const tax = total * 0.08;
-  const finalTotal = total + deliveryFee + tax;
+  if (!isOpen) return null;
+
+  if (orderCompleted) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black bg-opacity-50 animate-fade-in" />
+        <div className="relative bg-card rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-bounce-gentle border border-default">
+          <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold text-main mb-2">¡Pedido Confirmado! 🎉</h3>
+          <p className="text-muted mb-4">Tu pedido ha sido procesado exitosamente</p>
+          <div className="text-sm text-muted">
+            Cerrando automáticamente...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black bg-opacity-50 animate-fade-in" onClick={onClose} />
       
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-bounce-gentle">
-          {/* Header */}
-          <div className="bg-primary text-white p-6 flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold">🛒 Finalizar Compra</h2>
-              <p className="text-light">Paso {step} de 3</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-accent transition-colors duration-200 hover:scale-110"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
+      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col animate-bounce-gentle border border-default">
+        {/* Header */}
+        <div className="bg-primary text-white p-6 flex justify-between items-center rounded-t-2xl flex-shrink-0">
+          <div>
+            <h2 className="text-2xl font-bold">🛒 Finalizar Compra</h2>
+            <p className="text-light">Paso {step} de 3</p>
           </div>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-accent transition-colors duration-200 hover:scale-110"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
 
-          {/* Progress Bar */}
-          <div className="bg-gray-100 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-sm font-medium ${step >= 1 ? 'text-primary' : 'text-gray-400'}`}>
-                Información
-              </span>
-              <span className={`text-sm font-medium ${step >= 2 ? 'text-primary' : 'text-gray-400'}`}>
-                Pago
-              </span>
-              <span className={`text-sm font-medium ${step >= 3 ? 'text-primary' : 'text-gray-400'}`}>
-                Confirmación
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${(step / 3) * 100}%` }}
-              ></div>
-            </div>
+        {/* Progress Bar */}
+        <div className="bg-light bg-opacity-30 p-4 flex-shrink-0 border-b border-default">
+          <div className="flex items-center justify-between mb-3">
+            <span className={`text-sm font-medium flex items-center gap-1 ${step >= 1 ? 'text-primary' : 'text-muted'}`}>
+              📋 Información
+            </span>
+            <span className={`text-sm font-medium flex items-center gap-1 ${step >= 2 ? 'text-primary' : 'text-muted'}`}>
+              💳 Pago
+            </span>
+            <span className={`text-sm font-medium flex items-center gap-1 ${step >= 3 ? 'text-primary' : 'text-muted'}`}>
+              ✅ Confirmación
+            </span>
           </div>
+          <div className="w-full bg-background rounded-full h-3 border border-default">
+            <div 
+              className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
+          </div>
+        </div>
 
-          <div className="flex">
-            {/* Main Content */}
-            <div className="flex-1 p-6 overflow-y-auto">
-              {/* Step 1: Información de Entrega */}
+        {/* Content Container */}
+        <div className="flex flex-1 min-h-0">
+          {/* Main Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6">
               {step === 1 && (
-                <div className="space-y-6 animate-fade-in">
-                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <MapPinIcon className="h-6 w-6 text-primary mr-2" />
-                    Información de Entrega
+                <div className="space-y-6">
+                  <h3 className="text-xl font-bold text-main mb-4 flex items-center gap-2">
+                    📋 Información de Entrega
                   </h3>
-
+                  
+                  {/* Personal Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nombre
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Nombre</label>
                       <input
                         type="text"
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="Tu nombre"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Apellido
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Apellido</label>
                       <input
                         type="text"
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="Tu apellido"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Email</label>
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="tu@email.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Teléfono
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Teléfono</label>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="+52 555 123 4567"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dirección Completa
-                    </label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Calle, número, colonia"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Address */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-main">📍 Dirección de Entrega</h4>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Ciudad
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Dirección completa</label>
                       <input
                         type="text"
-                        name="city"
-                        value={formData.city}
+                        name="address"
+                        value={formData.address}
                         onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="Calle, número, colonia"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Estado
-                      </label>
-                      <input
-                        type="text"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Código Postal
-                      </label>
-                      <input
-                        type="text"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tipo de Entrega
-                    </label>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <label className="relative">
+                      <div>
+                        <label className="block text-sm font-medium text-main mb-1">Ciudad</label>
                         <input
-                          type="radio"
-                          name="deliveryType"
-                          value="standard"
-                          checked={formData.deliveryType === 'standard'}
+                          type="text"
+                          name="city"
+                          value={formData.city}
                           onChange={handleInputChange}
-                          className="sr-only"
+                          className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                          placeholder="Ciudad"
                         />
-                        <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
-                          formData.deliveryType === 'standard' 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-gray-200 hover:border-primary/50'
-                        }`}>
-                          <div className="text-center">
-                            <TruckIcon className="h-8 w-8 mx-auto mb-2 text-primary" />
-                            <div className="font-medium">Estándar</div>
-                            <div className="text-sm text-gray-500">24-48 hrs</div>
-                            <div className="text-sm font-medium text-primary">
-                              {total > 100 ? 'Gratis' : '$12.99'}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-main mb-1">Estado</label>
+                        <input
+                          type="text"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                          placeholder="Estado"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-main mb-1">Código Postal</label>
+                        <input
+                          type="text"
+                          name="zipCode"
+                          value={formData.zipCode}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                          placeholder="00000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delivery Options */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-main">🚚 Opciones de Entrega</h4>
+                    <div className="space-y-3">
+                      {Object.entries(deliveryOptions).map(([key, option]) => (
+                        <label key={key} className="flex items-center p-3 border border-default rounded-lg cursor-pointer hover:bg-light hover:bg-opacity-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="deliveryType"
+                            value={key}
+                            checked={formData.deliveryType === key}
+                            onChange={handleInputChange}
+                            className="text-primary"
+                          />
+                          <div className="ml-3 flex-1">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium text-main">{option.name}</span>
+                              <span className="text-primary font-bold">
+                                {option.price === 0 ? 'Gratis' : `$${option.price}`}
+                              </span>
                             </div>
+                            <p className="text-sm text-muted">{option.time}</p>
                           </div>
-                        </div>
-                      </label>
-
-                      <label className="relative">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="express"
-                          checked={formData.deliveryType === 'express'}
-                          onChange={handleInputChange}
-                          className="sr-only"
-                        />
-                        <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
-                          formData.deliveryType === 'express' 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-gray-200 hover:border-primary/50'
-                        }`}>
-                          <div className="text-center">
-                            <TruckIcon className="h-8 w-8 mx-auto mb-2 text-accent" />
-                            <div className="font-medium">Express</div>
-                            <div className="text-sm text-gray-500">2-4 hrs</div>
-                            <div className="text-sm font-medium text-accent">$24.99</div>
-                          </div>
-                        </div>
-                      </label>
-
-                      <label className="relative">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="scheduled"
-                          checked={formData.deliveryType === 'scheduled'}
-                          onChange={handleInputChange}
-                          className="sr-only"
-                        />
-                        <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
-                          formData.deliveryType === 'scheduled' 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-gray-200 hover:border-primary/50'
-                        }`}>
-                          <div className="text-center">
-                            <TruckIcon className="h-8 w-8 mx-auto mb-2 text-secondary" />
-                            <div className="font-medium">Programada</div>
-                            <div className="text-sm text-gray-500">Elige fecha</div>
-                            <div className="text-sm font-medium text-secondary">$15.99</div>
-                          </div>
-                        </div>
-                      </label>
+                        </label>
+                      ))}
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Instrucciones de Entrega (Opcional)
-                    </label>
-                    <textarea
-                      name="deliveryInstructions"
-                      value={formData.deliveryInstructions}
-                      onChange={handleInputChange}
-                      rows={3}
-                      placeholder="Indicaciones especiales para el delivery..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                    />
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Información de Pago */}
               {step === 2 && (
-                <div className="space-y-6 animate-fade-in">
-                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                    <CreditCardIcon className="h-6 w-6 text-primary mr-2" />
-                    Información de Pago
+                <div className="space-y-6">
+                  <h3 className="text-xl font-bold text-main mb-4 flex items-center gap-2">
+                    💳 Información de Pago
                   </h3>
-
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                  
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <p className="text-sm text-yellow-800">
-                        <span className="font-medium">Nota:</span> Esta es una demo. No ingreses información real de tarjetas.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre del Titular
-                    </label>
-                    <input
-                      type="text"
-                      name="cardholderName"
-                      value={formData.cardholderName}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Como aparece en la tarjeta"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Número de Tarjeta
-                    </label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      value={formData.cardNumber}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Fecha de Expiración
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Nombre en la tarjeta</label>
                       <input
                         type="text"
-                        name="expiryDate"
-                        value={formData.expiryDate}
+                        name="cardholderName"
+                        value={formData.cardholderName}
                         onChange={handleInputChange}
-                        required
-                        placeholder="MM/AA"
-                        maxLength={5}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="Como aparece en la tarjeta"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        CVV
-                      </label>
+                      <label className="block text-sm font-medium text-main mb-1">Número de tarjeta</label>
                       <input
                         type="text"
-                        name="cvv"
-                        value={formData.cvv}
+                        name="cardNumber"
+                        value={formData.cardNumber}
                         onChange={handleInputChange}
-                        required
-                        placeholder="123"
-                        maxLength={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                        className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
                       />
                     </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-3">Métodos de Pago Aceptados</h4>
-                    <div className="flex space-x-4">
-                      <div className="bg-white p-2 rounded border">💳 Visa</div>
-                      <div className="bg-white p-2 rounded border">💳 Mastercard</div>
-                      <div className="bg-white p-2 rounded border">💳 AMEX</div>
-                      <div className="bg-white p-2 rounded border">🏦 PayPal</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-main mb-1">Fecha de vencimiento</label>
+                        <input
+                          type="text"
+                          name="expiryDate"
+                          value={formData.expiryDate}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                          placeholder="MM/AA"
+                          maxLength={5}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-main mb-1">CVV</label>
+                        <input
+                          type="text"
+                          name="cvv"
+                          value={formData.cvv}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-main"
+                          placeholder="123"
+                          maxLength={4}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* Step 3: Confirmación */}
-              {step === 3 && (
-                <div className="space-y-6 animate-fade-in text-center">
-                  {orderCompleted ? (
-                    <div className="py-12">
-                      <CheckCircleIcon className="h-20 w-20 text-green-500 mx-auto mb-6 animate-bounce-gentle" />
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                        ¡Pedido Confirmado! 🎉
-                      </h3>
-                      <p className="text-gray-600 mb-6">
-                        Tu pedido ha sido procesado exitosamente. Recibirás un email de confirmación en breve.
-                      </p>
-                      <div className="bg-green-50 rounded-lg p-4 inline-block">
-                        <p className="text-green-800 font-medium">
-                          Número de pedido: #MV-{Date.now().toString().slice(-6)}
-                        </p>
-                        <p className="text-green-600 text-sm">
-                          Tiempo estimado de entrega: 24-48 horas
+                  {/* Payment Security Info */}
+                  <div className="bg-light bg-opacity-50 rounded-lg p-4 border border-primary border-opacity-20">
+                    <div className="flex items-start gap-3">
+                      <ExclamationTriangleIcon className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-main">🔒 Pago Seguro</h4>
+                        <p className="text-sm text-muted">
+                          Tus datos están protegidos con encriptación SSL de 256 bits.
+                          Esta es una simulación - no se procesará ningún pago real.
                         </p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="py-12">
-                      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-6"></div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                        Procesando tu pedido...
-                      </h3>
-                      <p className="text-gray-600">
-                        Por favor espera mientras confirmamos tu pago y preparamos tu pedido.
-                      </p>
-                    </div>
-                  )}
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Sidebar - Order Summary */}
-            <div className="w-80 bg-gray-50 p-6 border-l border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen del Pedido</h3>
-              
-              <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
-                {items.map((item: any) => (
-                  <div key={item.product.id} className="flex items-center space-x-3 bg-white p-3 rounded-lg">
-                    <img
-                      src={item.product.imageUrl || `https://via.placeholder.com/48x48/4d82bc/FFFFFF?text=${item.product.name.charAt(0)}`}
-                      alt={item.product.name}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.product.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Cantidad: {item.quantity}
-                      </p>
+              {step === 3 && (
+                <div className="space-y-6">
+                  <h3 className="text-xl font-bold text-main mb-4 flex items-center gap-2">
+                    ✅ Confirmar Pedido
+                  </h3>
+                  
+                  {/* Order Summary */}
+                  <div className="bg-light bg-opacity-30 rounded-lg p-4 border border-default">
+                    <h4 className="font-semibold text-main mb-3">📦 Resumen del Pedido</h4>
+                    <div className="space-y-2">
+                      {items.map((item: any) => (
+                        <div key={item.id} className="flex justify-between items-center text-sm">
+                          <span className="text-main">{item.product.name} x{item.quantity}</span>
+                          <span className="font-medium text-main">${(item.product.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-sm font-medium text-gray-900">
-                      ${(item.product.price * item.quantity).toFixed(2)}
-                    </p>
+                    
+                    <div className="border-t border-default mt-3 pt-3 space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted">Subtotal:</span>
+                        <span className="text-main">${total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted">Envío:</span>
+                        <span className="text-main">${deliveryFee.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted">IVA (16%):</span>
+                        <span className="text-main">${tax.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-lg font-bold border-t border-default pt-2">
+                        <span className="text-main">Total:</span>
+                        <span className="text-primary">${finalTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <div className="border-t border-gray-200 pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal:</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Envío:</span>
-                  <span>${deliveryFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Impuestos:</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-gray-200 pt-2">
-                  <div className="flex justify-between text-lg font-semibold">
-                    <span>Total:</span>
-                    <span className="text-primary">${finalTotal.toFixed(2)}</span>
+                  {/* Delivery Info */}
+                  <div className="bg-light bg-opacity-30 rounded-lg p-4 border border-default">
+                    <h4 className="font-semibold text-main mb-3">📍 Información de Entrega</h4>
+                    <div className="text-sm space-y-1">
+                      <p className="text-main"><strong>Nombre:</strong> {formData.firstName} {formData.lastName}</p>
+                      <p className="text-main"><strong>Dirección:</strong> {formData.address}, {formData.city}, {formData.state} {formData.zipCode}</p>
+                      <p className="text-main"><strong>Entrega:</strong> {deliveryOptions[formData.deliveryType as keyof typeof deliveryOptions].name}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Footer */}
-          {!orderCompleted && (
-            <div className="bg-gray-50 px-6 py-4 flex justify-between border-t border-gray-200">
-              {step > 1 && (
+          {/* Sidebar - Fixed */}
+          <div className="w-80 bg-light bg-opacity-20 border-l border-default p-6 flex flex-col">
+            <div className="flex-1">
+              <h4 className="font-semibold text-main mb-4">🛒 Tu Pedido</h4>
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {items.map((item: any) => (
+                  <div key={item.id} className="flex items-center gap-3 p-2 bg-background rounded-lg border border-default">
+                    <div className="text-2xl">{item.product.imageUrl || '🐟'}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-main text-sm truncate">{item.product.name}</p>
+                      <p className="text-xs text-muted">x{item.quantity}</p>
+                    </div>
+                    <div className="text-sm font-medium text-primary">
+                      ${(item.product.price * item.quantity).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-default">
+                <div className="flex justify-between text-lg font-bold">
+                  <span className="text-main">Total:</span>
+                  <span className="text-primary">${finalTotal.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3 mt-6">
+              {step < 3 && (
                 <button
-                  onClick={handlePrevStep}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-all duration-300"
+                  onClick={handleNextStep}
+                  className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-secondary transition-colors duration-200 font-medium flex items-center justify-center gap-2"
                 >
-                  Anterior
+                  Siguiente
+                  <ArrowRightIcon className="h-4 w-4" />
                 </button>
               )}
               
-              <div className="ml-auto">
-                {step < 2 ? (
-                  <button
-                    onClick={handleNextStep}
-                    className="bg-primary hover:bg-secondary text-white px-8 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105 btn-gradient-primary"
-                  >
-                    Continuar
-                  </button>
-                ) : step === 2 ? (
-                  <button
-                    onClick={handleSubmitOrder}
-                    disabled={loading}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Procesando...' : 'Confirmar Pedido'}
-                  </button>
-                ) : null}
-              </div>
+              {step === 3 && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium disabled:opacity-50"
+                >
+                  {loading ? '🔄 Procesando...' : '✅ Confirmar Pedido'}
+                </button>
+              )}
+              
+              {step > 1 && (
+                <button
+                  onClick={handlePrevStep}
+                  className="w-full bg-background text-main py-2 px-4 rounded-lg border border-default hover:bg-light hover:bg-opacity-50 transition-colors duration-200 font-medium flex items-center justify-center gap-2"
+                >
+                  <ArrowLeftIcon className="h-4 w-4" />
+                  Anterior
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

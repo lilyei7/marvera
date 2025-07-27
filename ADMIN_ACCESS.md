@@ -36,13 +36,20 @@ Contraseña: admin
 - **Control de inventario**
 
 ### ✅ Categorías Disponibles
-- 🐟 Pescados
-- 🦐 Camarones
-- 🦪 Ostras
-- 🦞 Langostas
-- 🦀 Cangrejos
-- 🐚 Moluscos
-- 🌊 Otros
+- 🐟 Pescados (Salmón, Atún, Robalo, Mero)
+- 🦐 Camarones (Jumbo, Tiger, Blancos)
+- 🦪 Ostras (Blue Point, Kumamoto, Belon)
+- 🦞 Langostas (Maine, Espinosa, Australiana)
+- 🦀 Cangrejos (Real Alaska, Azul, Dungeness)
+- 🐚 Moluscos (Vieiras, Mejillones, Almejas, Pulpo)
+- 🌊 Otros Especiales (Ballena 🐋, Calamar 🦑, Tiburón 🦈, Medusas 🪼, Caviar 🥚)
+
+## 🛒 Checkout Mejorado
+- ✅ **Diseño responsive** con scroll funcional
+- ✅ **3 pasos claros**: Información → Pago → Confirmación
+- ✅ **Sidebar fijo** con resumen del pedido
+- ✅ **Navegación mejorada** entre pasos
+- ✅ **Formularios optimizados** para móvil y desktop
 
 ## 🌙 Modo Oscuro
 - Botón de modo oscuro disponible en la navegación
@@ -67,8 +74,32 @@ Contraseña: admin
 - ✅ Build de producción exitoso
 - ✅ Modo oscuro completo
 - ✅ Animaciones mejoradas (sin rebote molesto)
+- ✅ Checkout completamente rediseñado
+- ✅ 26 productos de ejemplo con emojis
 - ✅ Diseño responsivo
 - ✅ Redux Toolkit para gestión de estado
+
+## 🆕 Nuevas Mejoras
+
+### 🛒 **Checkout Completamente Rediseñado**
+- **Problema solucionado**: Scroll funcional en todos los pasos
+- **Estructura mejorada**: Sidebar fijo + contenido scrollable
+- **Navegación clara**: Botones Anterior/Siguiente visibles
+- **Design responsive**: Funciona perfecto en móvil y desktop
+- **Proceso optimizado**: 3 pasos más intuitivos
+
+### 🐋 **26 Productos Marinos con Emojis**
+- **Pescados**: Salmón 🐟, Atún 🐟, Robalo 🐟, Mero 🐟
+- **Crustáceos**: Camarones Tiger 🦐, Langosta Maine 🦞, Cangrejo Real 🦀
+- **Moluscos**: Vieiras 🐚, Pulpo 🐙, Ostras Kumamoto 🦪
+- **Especiales**: Ballena Minke 🐋, Calamar Gigante 🦑, Tiburón 🦈, Caviar Beluga 🥚
+- **Sin placeholders**: Todos los productos tienen descripción e información completa
+
+### 🌙 **Modo Oscuro Funcional**
+- **Toggle en navegación**: Botón Sol/Luna visible
+- **Persistencia**: Se guarda en localStorage
+- **Variables CSS**: Soporte completo para ambos temas
+- **Transiciones suaves**: Cambio animado entre temas
 
 ## 🚀 Comandos de Desarrollo
 
