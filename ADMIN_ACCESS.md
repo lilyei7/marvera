@@ -18,6 +18,7 @@ http://localhost:5174/admin-access
 Usuario: admin
 Contraseña: admin
 ```
+**Nota**: Ahora usa el backend real con base de datos SQLite
 
 ## 🎯 Funcionalidades del Panel Admin
 

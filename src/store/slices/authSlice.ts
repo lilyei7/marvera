@@ -8,25 +8,6 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
-      // Simulación temporal para admin
-      if (credentials.email === 'admin' && credentials.password === 'admin') {
-        const adminUser = {
-          token: 'admin-token-123',
-          user: {
-            id: 1,
-            email: 'admin@marvera.com',
-            firstName: 'Administrador',
-            lastName: 'MarVera',
-            role: 'admin',
-            phone: '+1 (555) 123-4567',
-            isActive: true
-          }
-        };
-        
-        localStorage.setItem('token', adminUser.token);
-        return adminUser;
-      }
-
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {

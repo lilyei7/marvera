@@ -248,4 +248,32 @@ export class ProductService {
       return null;
     }
   }
+
+  static async deleteProduct(id: number): Promise<boolean> {
+    try {
+      const db = dbManager.getDb();
+      
+      // Verificar que el producto existe
+      const product = await ProductService.getProductById(id);
+      if (!product) {
+        return false;
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        db.run(
+          'UPDATE products SET isActive = 0, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+          [id],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      return false;
+    }
+  }
 }

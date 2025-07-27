@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -10,15 +10,24 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addProduct, updateProduct, deleteProduct } from '../store/slices/productsSlice';
+import MultiImageUploader from './MultiImageUploader';
+import ProductImageViewer from './ProductImageViewer';
+import { ToastContainer, useToast } from './Toast';
+
+// API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const AdminPanel: React.FC = () => {
   const dispatch = useAppDispatch();
   const { items: products } = useAppSelector((state: any) => state.products);
   const { user } = useAppSelector((state: any) => state.auth);
+  const { toasts, showSuccess, showError, removeToast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users'>('dashboard');
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [productForm, setProductForm] = useState({
     name: '',
     price: '',
@@ -26,9 +35,73 @@ const AdminPanel: React.FC = () => {
     category_id: 1,
     stock: '',
     unit: 'kg',
-    imageUrl: '',
+    images: [] as string[], // Múltiples imágenes
+    imageUrl: '', // Para compatibilidad
     isFeatured: false
   });
+
+  // Estados locales para el admin
+  const [adminProducts, setAdminProducts] = useState<any[]>([]);
+
+  // Cargar categorías y productos al montar el componente
+  useEffect(() => {
+    loadCategories();
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/products`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAdminProducts(data.products || []);
+      } else {
+        showError('Error', 'No se pudieron cargar los productos');
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+      showError('Error', 'Error de conexión al cargar productos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/products/categories`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } else {
+        console.warn('Could not load categories, using defaults');
+        // Usar categorías por defecto si falla la carga
+        setCategories([
+          { id: 1, name: 'Pescados' },
+          { id: 2, name: 'Mariscos' },
+          { id: 3, name: 'Crustáceos' },
+          { id: 4, name: 'Moluscos' }
+        ]);
+      }
+    } catch (error) {
+      console.warn('Error loading categories, using defaults:', error);
+      // Usar categorías por defecto si hay error de conexión
+      setCategories([
+        { id: 1, name: 'Pescados' },
+        { id: 2, name: 'Mariscos' },
+        { id: 3, name: 'Crustáceos' },
+        { id: 4, name: 'Moluscos' }
+      ]);
+    }
+  };
 
   // Verificar si el usuario es admin
   if (!user || user.role !== 'admin') {
@@ -49,32 +122,72 @@ const AdminPanel: React.FC = () => {
     );
   }
 
-  const handleProductSubmit = (e: React.FormEvent) => {
+  const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const productData = {
-      ...productForm,
-      id: editingProduct ? editingProduct.id : `${Date.now()}`,
-      slug: productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      price: parseFloat(productForm.price),
-      stock: parseInt(productForm.stock),
-      isActive: true,
-      category: 'pescados' as any, // Temporal
-      inStock: true,
-      origin: 'Local',
-      freshness: 'Fresh',
-      weight: 1,
-      createdAt: editingProduct ? editingProduct.createdAt : new Date(),
-      updatedAt: new Date()
-    };
+    setLoading(true);
 
-    if (editingProduct) {
-      dispatch(updateProduct(productData));
-    } else {
-      dispatch(addProduct(productData));
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showError('Error', 'No tienes autorización para realizar esta acción');
+        setLoading(false);
+        return;
+      }
+
+      const productData = {
+        name: productForm.name,
+        slug: productForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: productForm.description,
+        price: parseFloat(productForm.price),
+        category_id: productForm.category_id,
+        stock: parseInt(productForm.stock),
+        unit: productForm.unit,
+        images: productForm.images,
+        isActive: true,
+        isFeatured: productForm.isFeatured
+      };
+
+      const url = editingProduct 
+        ? `${API_BASE_URL}/api/products/${editingProduct.id}`
+        : `${API_BASE_URL}/api/products`;
+      
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (editingProduct) {
+          dispatch(updateProduct(data.product));
+          showSuccess('¡Éxito!', 'Producto actualizado correctamente');
+        } else {
+          dispatch(addProduct(data.product));
+          showSuccess('¡Éxito!', 'Producto creado correctamente');
+        }
+
+        // Recargar la lista de productos desde la base de datos
+        await loadProducts();
+        
+        setShowProductModal(false);
+        resetProductForm();
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.message || 'Error al guardar el producto');
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      showError('Error', 'Error de conexión al guardar el producto');
+    } finally {
+      setLoading(false);
     }
-
-    setShowProductModal(false);
-    resetProductForm();
   };
 
   const resetProductForm = () => {
@@ -85,6 +198,7 @@ const AdminPanel: React.FC = () => {
       category_id: 1,
       stock: '',
       unit: 'kg',
+      images: [],
       imageUrl: '',
       isFeatured: false
     });
@@ -100,20 +214,50 @@ const AdminPanel: React.FC = () => {
       category_id: product.category_id,
       stock: product.stock.toString(),
       unit: product.unit,
+      images: product.images || (product.imageUrl ? [product.imageUrl] : []),
       imageUrl: product.imageUrl || '',
       isFeatured: product.isFeatured
     });
     setShowProductModal(true);
   };
 
-  const handleDeleteProduct = (productId: number) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-      dispatch(deleteProduct(productId));
+  const handleDeleteProduct = async (productId: number) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showError('Error', 'No tienes autorización para realizar esta acción');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        dispatch(deleteProduct(productId));
+        showSuccess('¡Éxito!', 'Producto eliminado correctamente');
+        // Recargar la lista de productos desde la base de datos
+        await loadProducts();
+      } else {
+        const errorData = await response.json();
+        showError('Error', errorData.message || 'Error al eliminar el producto');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      showError('Error', 'Error de conexión al eliminar el producto');
     }
   };
 
-  // Asegurar que products está definido y es un array
-  const safeProducts = Array.isArray(products) ? products : [];
+  // Asegurar que adminProducts está definido y es un array
+  const safeProducts = Array.isArray(adminProducts) ? adminProducts : [];
 
   const stats = {
     totalProducts: safeProducts.length,
@@ -273,7 +417,7 @@ const AdminPanel: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900">Gestión de Productos</h2>
               <button
                 onClick={() => setShowProductModal(true)}
-                className="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center space-x-2 btn-gradient-primary"
+                className="bg-vibrant-blue hover:bg-dark-blue text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center space-x-2 btn-gradient-primary"
               >
                 <PlusIcon className="h-5 w-5" />
                 <span>Agregar Producto</span>
@@ -281,21 +425,35 @@ const AdminPanel: React.FC = () => {
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {safeProducts.map((product: any, index: number) => (
                 <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover-lift transition-all duration-300 animate-fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                   <div className="relative">
-                    <img
-                      src={product.imageUrl || `https://via.placeholder.com/300x200/4d82bc/FFFFFF?text=${product.name.charAt(0)}`}
-                      alt={product.name}
-                      className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://via.placeholder.com/300x200/4d82bc/FFFFFF?text=🐟';
-                      }}
-                    />
+                    {/* Mostrar múltiples imágenes con carrusel */}
+                    {product.images && product.images.length > 0 ? (
+                      <ProductImageViewer
+                        images={product.images}
+                        productName={product.name}
+                        className="w-full h-40 sm:h-48"
+                        showDots={true}
+                        showCounter={true}
+                        showThumbnails={true}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gradient-to-br from-light-peach to-light-beige flex items-center justify-center">
+                        <img
+                          src={product.imageUrl || `https://via.placeholder.com/300x200/4d82bc/FFFFFF?text=${product.name.charAt(0)}`}
+                          alt={product.name}
+                          className="w-full h-48 object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://via.placeholder.com/300x200/4d82bc/FFFFFF?text=🐟';
+                          }}
+                        />
+                      </div>
+                    )}
                     {product.isFeatured && (
-                      <div className="absolute top-2 right-2 bg-accent text-white px-2 py-1 rounded-full text-xs font-semibold">
+                      <div className="absolute top-2 right-2 bg-vibrant-blue text-white px-2 py-1 rounded-full text-xs font-semibold">
                         Destacado
                       </div>
                     )}
@@ -306,7 +464,7 @@ const AdminPanel: React.FC = () => {
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
                     
                     <div className="flex justify-between items-center mb-4">
-                      <span className="text-2xl font-bold text-primary">${product.price}</span>
+                      <span className="text-2xl font-bold text-vibrant-blue">${product.price}</span>
                       <span className="text-sm text-gray-500">Stock: {product.stock} {product.unit}</span>
                     </div>
                     
@@ -437,18 +595,38 @@ const AdminPanel: React.FC = () => {
                     <option value="docena">Docena</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Categoría
+                  </label>
+                  <select
+                    value={productForm.category_id}
+                    onChange={(e) => setProductForm({...productForm, category_id: parseInt(e.target.value)})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                    required
+                  >
+                    {categories.length > 0 ? (
+                      categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value={1}>Cargando categorías...</option>
+                    )}
+                  </select>
+                </div>
               </div>
 
+              {/* Galería de Imágenes Mejorada */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL de Imagen
-                </label>
-                <input
-                  type="url"
-                  value={productForm.imageUrl}
-                  onChange={(e) => setProductForm({...productForm, imageUrl: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                  placeholder="https://ejemplo.com/imagen.jpg"
+                <MultiImageUploader
+                  images={productForm.images}
+                  onChange={(images) => setProductForm({...productForm, images})}
+                  maxImages={5}
+                  title="Imágenes del Producto"
+                  description="Agrega hasta 5 imágenes usando URLs o emojis marinos para representar tu producto"
                 />
               </div>
 
@@ -491,15 +669,26 @@ const AdminPanel: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-primary hover:bg-secondary text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 hover:scale-105 btn-gradient-primary"
+                  disabled={loading}
+                  className="flex-1 bg-primary hover:bg-secondary text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 hover:scale-105 btn-gradient-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingProduct ? 'Actualizar' : 'Crear'} Producto
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      {editingProduct ? 'Actualizando...' : 'Creando...'}
+                    </div>
+                  ) : (
+                    `${editingProduct ? 'Actualizar' : 'Crear'} Producto`
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Toast Container para notificaciones */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 };

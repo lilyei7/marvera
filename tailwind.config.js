@@ -7,24 +7,47 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#005187",      // Azul oscuro principal de la paleta
-        secondary: "#4d82bc",    // Azul medio de la paleta
-        accent: "#84b6f4",       // Azul claro de la paleta
-        light: "#c4dafa",        // Azul muy claro de la paleta
-        background: "#fcffff",   // Blanco de la paleta
-        // Mantener colores de marina para compatibilidad
-        button: "#4d82bc",       // Usar secondary para botones
+        // 🎨 Nueva Paleta de Colores MarVera
+        'deep-navy': '#000020',      // Principal Oscuro
+        'dark-blue': '#171a4a',      // Secundario Oscuro  
+        'vibrant-blue': '#2f2c79',   // Acento Vibrante
+        'light-peach': '#e8c39e',    // Neutro Claro
+        'light-beige': '#f5e1ce',    // Fondo/Base
+        
+        // Aliases para facilidad de uso
+        primary: '#000020',          // deep-navy
+        secondary: '#171a4a',        // dark-blue
+        accent: '#2f2c79',           // vibrant-blue
+        light: '#e8c39e',            // light-peach
+        background: '#f5e1ce',       // light-beige
+        button: '#2f2c79',           // vibrant-blue para botones
+        
+        // Paleta extendida con variaciones
+        marveraBlue: {
+          50: '#f5e1ce',    // light-beige
+          100: '#e8c39e',   // light-peach
+          200: '#d4a574',   // variación más oscura
+          300: '#b8874a',   // variación media
+          400: '#9c6820',   // variación oscura
+          500: '#2f2c79',   // vibrant-blue
+          600: '#252052',   // variación más oscura
+          700: '#1b143b',   // variación muy oscura
+          800: '#171a4a',   // dark-blue
+          900: '#000020',   // deep-navy
+        },
+        
+        // Mantener compatibilidad con código existente
         marina: {
-          50: '#fcffff',    
-          100: '#c4dafa',   
-          200: '#84b6f4',   
-          300: '#4d82bc',   
-          400: '#005187',   
-          500: '#004d7a',   
-          600: '#004066',   
-          700: '#003354',   
-          800: '#002642',   
-          900: '#001a30',   
+          50: '#f5e1ce',    
+          100: '#e8c39e',   
+          200: '#d4a574',   
+          300: '#2f2c79',   
+          400: '#171a4a',   
+          500: '#000020',   
+          600: '#000018',   
+          700: '#000010',   
+          800: '#000008',   
+          900: '#000000',   
         },
       },
       fontFamily: {

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { 
@@ -8,11 +8,15 @@ import {
 } from '../store/slices/productsSlice';
 import { addToCart } from '../store/slices/cartSlice';
 import { addNotification } from '../store/slices/notificationSlice';
+import ProductImageViewer from '../components/ProductImageViewer';
+import ProductDetailModal from '../components/ProductDetailModal';
 import type { Product, ProductCategory } from '../types';
 
 const ProductsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const productsState = useAppSelector((state) => state.products);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const filteredItems = (productsState as any)?.filteredItems || [];
   const loading = (productsState as any)?.loading || false;
@@ -35,6 +39,7 @@ const ProductsPage: React.FC = () => {
 
   const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
     if (event) {
+      event.stopPropagation(); // Evitar que se abra el modal
       const button = event.currentTarget as HTMLElement;
       button.classList.add('animate-product-add');
       setTimeout(() => {
@@ -48,6 +53,21 @@ const ProductsPage: React.FC = () => {
       type: 'success',
       duration: 2000
     }));
+  };
+
+  const handleProductClick = (product: any) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleModalAddToCart = (product: any) => {
+    handleAddToCart(product);
+    handleCloseModal();
   };
 
   const categoryLabels: Record<ProductCategory | 'all', string> = {
@@ -168,23 +188,38 @@ const ProductsPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              <div className="products-grid grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
                 {filteredItems.map((product: any) => (
                   <div
                     key={product.id}
-                    className="bg-white rounded-lg sm:rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover-lift group"
+                    onClick={() => handleProductClick(product)}
+                    className="product-card bg-white rounded-lg sm:rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover-lift group cursor-pointer"
                   >
-                    <div className="aspect-w-1 aspect-h-1 bg-light relative h-32 xs:h-36 sm:h-40 md:h-44 lg:h-48">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://via.placeholder.com/300x200/40E0D0/FFFFFF?text=🐟';
-                        }}
-                      />
-                      <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2">
+                    <div className="aspect-w-1 aspect-h-1 bg-light relative h-32 xs:h-36 sm:h-40 md:h-44 lg:h-48 xl:h-52">
+                      {/* Mostrar carrusel si hay múltiples imágenes, imagen única si hay solo una */}
+                      {product.images && product.images.length > 0 ? (
+                        <div className="w-full h-full">
+                          <ProductImageViewer
+                            images={product.images}
+                            productName={product.name}
+                            className="w-full h-full"
+                            showDots={product.images.length > 1}
+                            showCounter={product.images.length > 1}
+                            showThumbnails={false}
+                          />
+                        </div>
+                      ) : (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://via.placeholder.com/300x200/40E0D0/FFFFFF?text=🐟';
+                          }}
+                        />
+                      )}
+                      <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 z-20">
                         <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
                           product.freshness === 'Ultra Fresh' 
                             ? 'bg-green-100 text-green-800'
@@ -246,6 +281,14 @@ const ProductsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onAddToCart={handleModalAddToCart}
+      />
     </div>
   );
 };

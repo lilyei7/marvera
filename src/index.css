@@ -3,30 +3,30 @@
 
 /* Custom CSS variables para la nueva paleta de colores MarVera */
 :root {
-  --primary: #005187;      /* Azul oscuro principal */
-  --secondary: #4d82bc;    /* Azul medio */
-  --accent: #84b6f4;       /* Azul claro */
-  --light: #c4dafa;        /* Azul muy claro */
-  --background: #fcffff;   /* Blanco */
-  --button: #4d82bc;       /* Color de botones */
-  --text-primary: #1f2937; /* Texto principal */
-  --text-secondary: #6b7280; /* Texto secundario */
+  --primary: #000020;      /* Deep Navy - Principal Oscuro */
+  --secondary: #171a4a;    /* Dark Blue - Secundario Oscuro */
+  --accent: #2f2c79;       /* Vibrant Blue - Acento Vibrante */
+  --light: #ffffff;        /* Light Peach - Neutro Claro */
+  --background: #e9e8e7;   /* Light Beige - Fondo/Base */
+  --button: #2f2c79;       /* Vibrant Blue para botones */
+  --text-primary: #000020; /* Texto principal */
+  --text-secondary: #171a4a; /* Texto secundario */
   --card-bg: #ffffff;      /* Fondo de tarjetas */
-  --border-color: #e5e7eb; /* Color de bordes */
+  --border-color: #e8c39e; /* Color de bordes */
 }
 
 /* Modo oscuro */
 [data-theme="dark"] {
-  --primary: #3b82f6;      /* Azul más claro para mejor contraste */
-  --secondary: #60a5fa;    /* Azul medio claro */
-  --accent: #93c5fd;       /* Azul claro */
-  --light: #1e293b;        /* Azul oscuro para fondos */
-  --background: #0f172a;   /* Fondo oscuro */
-  --button: #3b82f6;       /* Botones azules */
-  --text-primary: #f8fafc; /* Texto blanco */
-  --text-secondary: #cbd5e1; /* Texto gris claro */
-  --card-bg: #1e293b;      /* Fondo de tarjetas oscuro */
-  --border-color: #374151; /* Bordes grises */
+  --primary: #2f2c79;      /* Vibrant Blue para mejor contraste */
+  --secondary: #171a4a;    /* Dark Blue */
+  --accent: #e8c39e;       /* Light Peach como acento */
+  --light: #171a4a;        /* Dark Blue para fondos */
+  --background: #000020;   /* Deep Navy como fondo */
+  --button: #2f2c79;       /* Vibrant Blue para botones */
+  --text-primary: #f5e1ce; /* Light Beige para texto */
+  --text-secondary: #e8c39e; /* Light Peach para texto secundario */
+  --card-bg: #171a4a;      /* Dark Blue para tarjetas */
+  --border-color: #2f2c79; /* Vibrant Blue para bordes */
 }
 
 /* FORZAR COLORES DE LA PALETA - SOBRESCRIBIR TAILWIND */
@@ -369,6 +369,55 @@ textarea:focus {
   transition: transform 0.5s ease;
 }
 
+/* Modal improvements */
+.modal-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Responsive carousel buttons */
+@media (max-width: 640px) {
+  .carousel-button {
+    padding: 6px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .carousel-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Touch improvements for mobile */
+.carousel-container {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Grid improvements */
+@media (max-width: 640px) {
+  .products-grid {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .products-grid {
+    gap: 12px;
+  }
+}
+
+@media (min-width: 769px) {
+  .products-grid {
+    gap: 24px;
+  }
+}
+
 /* Admin Dashboard Enhancements */
 .stat-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
@@ -443,4 +492,157 @@ textarea:focus {
   background: linear-gradient(135deg, #004066 0%, #005187 100%);
   box-shadow: 0 8px 20px rgba(0, 81, 135, 0.3);
   transform: translateY(-1px);
+}
+
+/* Fondo de salmón estético para Hero Section */
+.salmon-background {
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(249, 115, 22, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 60%, rgba(251, 146, 60, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(254, 215, 170, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(251, 146, 60, 0.08) 50%, rgba(254, 215, 170, 0.06) 100%);
+  background-size: 300px 300px, 250px 250px, 200px 200px, 100% 100%;
+  background-position: 0% 0%, 100% 50%, 50% 100%, 0% 0%;
+  animation: salmon-float 15s ease-in-out infinite;
+}
+
+@keyframes salmon-float {
+  0%, 100% {
+    background-position: 0% 0%, 100% 50%, 50% 100%, 0% 0%;
+  }
+  25% {
+    background-position: 10% 10%, 90% 60%, 60% 90%, 5% 5%;
+  }
+  50% {
+    background-position: 20% 5%, 80% 70%, 70% 80%, 10% 10%;
+  }
+  75% {
+    background-position: 15% 15%, 85% 55%, 55% 85%, 7% 7%;
+  }
+}
+
+/* Efecto de ondas del océano */
+.ocean-waves {
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 32, 0.1) 0%,
+    rgba(23, 26, 74, 0.15) 25%,
+    rgba(47, 44, 121, 0.2) 50%,
+    rgba(23, 26, 74, 0.15) 75%,
+    rgba(0, 0, 32, 0.1) 100%);
+  background-size: 400% 400%;
+  animation: ocean-wave 8s ease-in-out infinite;
+}
+
+@keyframes ocean-wave {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Animaciones para emojis marinos flotantes */
+@keyframes float-marine-1 {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(0deg); 
+    opacity: 0.7;
+  }
+  25% { 
+    transform: translateY(-15px) translateX(10px) rotate(5deg); 
+    opacity: 1;
+  }
+  50% { 
+    transform: translateY(-30px) translateX(20px) rotate(-3deg); 
+    opacity: 0.8;
+  }
+  75% { 
+    transform: translateY(-20px) translateX(5px) rotate(8deg); 
+    opacity: 0.9;
+  }
+}
+
+@keyframes float-marine-2 {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(0deg) scale(1); 
+    opacity: 0.6;
+  }
+  33% { 
+    transform: translateY(-20px) translateX(-15px) rotate(-10deg) scale(1.1); 
+    opacity: 0.9;
+  }
+  66% { 
+    transform: translateY(-40px) translateX(-25px) rotate(15deg) scale(0.9); 
+    opacity: 1;
+  }
+}
+
+@keyframes float-marine-3 {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(0deg); 
+    opacity: 0.8;
+  }
+  20% { 
+    transform: translateY(-10px) translateX(15px) rotate(12deg); 
+    opacity: 1;
+  }
+  40% { 
+    transform: translateY(-25px) translateX(30px) rotate(-8deg); 
+    opacity: 0.7;
+  }
+  60% { 
+    transform: translateY(-35px) translateX(20px) rotate(20deg); 
+    opacity: 0.9;
+  }
+  80% { 
+    transform: translateY(-15px) translateX(10px) rotate(-5deg); 
+    opacity: 1;
+  }
+}
+
+@keyframes float-marine-4 {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(0deg) scale(1); 
+    opacity: 0.5;
+  }
+  50% { 
+    transform: translateY(-45px) translateX(-20px) rotate(-15deg) scale(1.2); 
+    opacity: 1;
+  }
+}
+
+@keyframes float-marine-5 {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) rotate(0deg); 
+    opacity: 0.7;
+  }
+  30% { 
+    transform: translateY(-18px) translateX(25px) rotate(25deg); 
+    opacity: 1;
+  }
+  70% { 
+    transform: translateY(-32px) translateX(5px) rotate(-12deg); 
+    opacity: 0.8;
+  }
+}
+
+/* Clases para aplicar las animaciones */
+.animate-marine-float-1 {
+  animation: float-marine-1 8s ease-in-out infinite;
+}
+
+.animate-marine-float-2 {
+  animation: float-marine-2 12s ease-in-out infinite;
+}
+
+.animate-marine-float-3 {
+  animation: float-marine-3 10s ease-in-out infinite;
+}
+
+.animate-marine-float-4 {
+  animation: float-marine-4 15s ease-in-out infinite;
+}
+
+.animate-marine-float-5 {
+  animation: float-marine-5 9s ease-in-out infinite;
 }

@@ -202,4 +202,39 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Eliminar producto (solo admin)
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const productId = parseInt(id);
+
+    if (isNaN(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de producto inválido'
+      });
+    }
+
+    const success = await ProductService.deleteProduct(productId);
+    
+    if (!success) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Producto eliminado correctamente'
+    });
+  } catch (error) {
+    console.error('Error eliminando producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
 export default router;

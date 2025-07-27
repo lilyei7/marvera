@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleCart } from '../store/slices/cartSlice';
 import { verifyToken, logoutUser } from '../store/slices/authSlice';
-import { useDarkMode } from '../hooks/useDarkMode';
 import AuthModal from './AuthModal';
 
 const Navigation: React.FC = () => {
@@ -14,7 +13,7 @@ const Navigation: React.FC = () => {
   const itemCount = cartState?.itemCount || 0;
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+
 
   useEffect(() => {
     dispatch(verifyToken());
@@ -34,12 +33,14 @@ const Navigation: React.FC = () => {
       <nav className="bg-card shadow-lg border-b border-default sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
-            {/* Logo */}
+            {/* Logo - Solo marveralogo.png */}
             <Link to="/" className="flex items-center space-x-1 sm:space-x-2 group flex-shrink-0">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-                <span className="hidden xs:inline">🌊 MarVera</span>
-                <span className="xs:hidden">🌊 MV</span>
-              </div>
+              {/* Logo real de MarVera - SOLO IMAGEN */}
+              <img 
+                src="/logomarvera.png" 
+                alt="MarVera - Pescados y Mariscos" 
+                className="h-8 w-auto sm:h-10 sm:w-auto lg:h-12 lg:w-auto max-w-[120px] sm:max-w-[150px] lg:max-w-[180px] object-contain transition-transform duration-300 group-hover:scale-105"
+              />
             </Link>
 
             {/* Barra de búsqueda - Hidden on mobile */}
@@ -125,22 +126,7 @@ const Navigation: React.FC = () => {
                 )}
               </div>
 
-              {/* Modo Oscuro */}
-              <button
-                onClick={toggleDarkMode}
-                className="flex items-center space-x-1 text-main hover:text-primary px-2 sm:px-3 lg:px-4 py-2 rounded-lg hover:bg-light hover:bg-opacity-50 transition-all duration-200 group border border-transparent hover:border-primary"
-                title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              >
-                {isDarkMode ? (
-                  <SunIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
-                ) : (
-                  <MoonIcon className="h-5 w-5 lg:h-6 lg:w-6 transition-transform duration-200 group-hover:scale-110" />
-                )}
-                <span className="hidden xl:block font-medium text-sm">
-                  {isDarkMode ? 'Claro' : 'Oscuro'}
-                </span>
-              </button>
-
+                {/* Modo oscuro */}
               {/* Carrito */}
               <button
                 onClick={handleCartClick}
@@ -180,39 +166,28 @@ const Navigation: React.FC = () => {
                 to="/products"
                 className="text-sm text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline"
               >
-                Todos los Productos
+                Comprar en linea
               </Link>
               <Link
                 to="/products?category=pescados-frescos"
                 className="text-sm text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline"
               >
-                Pescados Frescos
+                Sucursales
               </Link>
               <Link
                 to="/products?category=mariscos"
                 className="text-sm text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline"
               >
-                Mariscos
+                Empresa
               </Link>
               <Link
                 to="/products?category=crustaceos"
                 className="text-sm text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline"
               >
-                Crustáceos
+                Contacto
               </Link>
-              <Link
-                to="/products?category=moluscos"
-                className="text-sm text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline"
-              >
-                Moluscos
-              </Link>
-              <Link
-                to="/products?category=premium"
-                className="text-sm text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline"
-              >
-                Premium
-              </Link>
-            </div>
+              
+             </div>
           </div>
         </div>
       </nav>

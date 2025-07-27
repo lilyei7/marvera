@@ -167,4 +167,47 @@ export class AuthService {
       return null;
     }
   }
+
+  static async createAdminUser(): Promise<void> {
+    try {
+      const db = dbManager.getDb();
+      
+      // Verificar si ya existe un admin
+      const existingAdmin = await new Promise<User | null>((resolve, reject) => {
+        db.get(
+          'SELECT * FROM users WHERE email = ? AND role = ?',
+          ['admin', 'admin'],
+          (err, row: User) => {
+            if (err) reject(err);
+            else resolve(row || null);
+          }
+        );
+      });
+
+      if (existingAdmin) {
+        console.log('✅ Usuario admin ya existe en la base de datos');
+        return;
+      }
+
+      // Crear usuario admin
+      console.log('🔨 Creando usuario admin...');
+      const hashedPassword = await bcrypt.hash('admin', 10);
+
+      await new Promise<void>((resolve, reject) => {
+        db.run(
+          `INSERT INTO users (email, password, firstName, lastName, role, isActive) 
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          ['admin', hashedPassword, 'Administrador', 'MarVera', 'admin', 1],
+          function(err) {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+
+      console.log('✅ Usuario admin creado - email: admin, password: admin');
+    } catch (error) {
+      console.error('❌ Error creando usuario admin:', error);
+    }
+  }
 }

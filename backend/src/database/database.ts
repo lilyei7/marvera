@@ -150,6 +150,8 @@ export class DatabaseManager {
     this.insertDefaultCategories();
     // Insertar productos por defecto
     this.insertDefaultProducts();
+    // Crear usuario admin por defecto
+    this.createAdminUser();
   }
 
   private insertDefaultCategories(): void {
@@ -242,6 +244,42 @@ export class DatabaseManager {
         [product.name, product.slug, product.description, product.price, 
          product.category_id, product.stock, product.unit, product.isFeatured]
       );
+    });
+  }
+
+  private createAdminUser(): void {
+    // Usar require en lugar de import para evitar problemas
+    const bcrypt = require('bcryptjs');
+    
+    // Verificar si ya existe el admin
+    this.db.get('SELECT * FROM users WHERE email = ?', ['admin'], (err: any, row: any) => {
+      if (err) {
+        console.error('❌ Error checking admin user:', err);
+        return;
+      }
+      
+      if (!row) {
+        console.log('🔨 Creando usuario admin...');
+        // Crear usuario admin
+        bcrypt.hash('admin', 10).then((hashedPassword: string) => {
+          this.db.run(
+            `INSERT INTO users (email, password, firstName, lastName, role) 
+             VALUES (?, ?, ?, ?, ?)`,
+            ['admin', hashedPassword, 'Administrador', 'MarVera', 'admin'],
+            function(err: any) {
+              if (err) {
+                console.error('❌ Error creating admin user:', err);
+              } else {
+                console.log('✅ Usuario admin creado - email: admin, password: admin');
+              }
+            }
+          );
+        }).catch((err: any) => {
+          console.error('❌ Error hashing password:', err);
+        });
+      } else {
+        console.log('✅ Usuario admin ya existe en la base de datos');
+      }
     });
   }
 

@@ -1,0 +1,23 @@
+<!-- Logo SVG de ejemplo para MarVera -->
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular azul marino -->
+  <circle cx="100" cy="100" r="95" fill="#005187" stroke="#4d82bc" stroke-width="3"/>
+  
+  <!-- Olas estilizadas -->
+  <path d="M20 120 Q50 100 80 120 T140 120 T200 120" stroke="#40E0D0" stroke-width="4" fill="none"/>
+  <path d="M20 140 Q50 120 80 140 T140 140 T200 140" stroke="#87CEEB" stroke-width="3" fill="none"/>
+  
+  <!-- Texto MarVera -->
+  <text x="100" y="80" font-family="Montserrat, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">
+    MarVera
+  </text>
+  
+  <!-- Subtítulo -->
+  <text x="100" y="100" font-family="Montserrat, sans-serif" font-size="12" fill="#87CEEB" text-anchor="middle">
+    Premium Seafood
+  </text>
+  
+  <!-- Icono de pez estilizado -->
+  <path d="M100 160 Q120 150 140 160 Q130 170 120 165 Q110 170 100 160 Z" fill="#40E0D0"/>
+  <circle cx="125" cy="160" r="2" fill="white"/>
+</svg>
