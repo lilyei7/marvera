@@ -1,4 +1,4 @@
-# 🚀 MarVera - Guía de Despliegue en Servidor Linux
+# 🚀 MarVera - Guía de Despliegue con Nginx
 
 ## Configuración para Acceso Público en IP: 187.33.155.127
 
@@ -6,229 +6,240 @@
 - Servidor Linux con acceso SSH
 - Node.js 18+ instalado
 - Git instalado
-- Puertos 3001 y 5173 disponibles
+- Nginx (se instalará automáticamente)
 
 ---
 
-## 🔧 Configuración Automática
+## 🔧 Configuración Automática con Nginx (RECOMENDADO)
 
-### Opción 1: Script Automático (Recomendado)
+### Instalación Completa de Un Solo Comando
 
 ```bash
-# En el servidor Linux
+# En el servidor Linux (187.33.155.127)
 git clone https://github.com/lilyei7/marvera.git
 cd marvera
 
-# Ejecutar configuración automática
+# Ejecutar configuración completa con nginx
 chmod +x deploy-server.sh
-bash deploy-server.sh
+sudo bash deploy-server.sh
 ```
 
----
-
-## ⚙️ Configuración Manual
-
-### Paso 1: Clonar y Preparar
-
-```bash
-# Clonar repositorio
-git clone https://github.com/lilyei7/marvera.git
-cd marvera
-```
-
-### Paso 2: Configurar Firewall
-
-```bash
-# Abrir puertos necesarios
-sudo ufw allow 5173/tcp  # Frontend (Vite)
-sudo ufw allow 3001/tcp  # Backend (Express)
-
-# Verificar configuración
-sudo ufw status
-```
-
-### Paso 3: Configurar Variables de Entorno
-
-```bash
-# Editar archivo .env
-nano .env
-```
-
-**Contenido del archivo `.env`:**
-```env
-VITE_API_URL=http://187.33.155.127:3001
-VITE_MAPBOX_TOKEN=pk.test.placeholder
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
-VITE_SOCKET_URL=http://187.33.155.127:3001
-```
-
-### Paso 4: Instalar Dependencias
-
-```bash
-# Frontend
-npm install
-
-# Backend
-cd backend
-npm install
-cd ..
-```
-
----
-
-## 🚀 Ejecutar la Aplicación
-
-### Opción A: Usando Screen/Tmux (Recomendado para producción)
-
-```bash
-# Instalar screen si no está disponible
-sudo apt install screen
-
-# Crear sesión para backend
-screen -S marvera-backend
-cd backend && npm run dev
-# Presionar Ctrl+A, luego D para separar
-
-# Crear sesión para frontend
-screen -S marvera-frontend
-npm run dev
-# Presionar Ctrl+A, luego D para separar
-
-# Ver sesiones activas
-screen -ls
-
-# Reconectarse a una sesión
-screen -r marvera-backend
-screen -r marvera-frontend
-```
-
-### Opción B: Terminales Separadas
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm run dev
-```
-
-**Terminal 2 - Frontend:**
-```bash
-npm run dev
-```
+**¡Esto configurará TODO automáticamente:**
+- ✅ Nginx como proxy reverso
+- ✅ Firewall (puertos 80, 8080)
+- ✅ Variables de entorno
+- ✅ Servicios systemd
+- ✅ Dependencias
 
 ---
 
 ## 🌐 Acceso a la Aplicación
 
-Una vez que ambos servidores estén corriendo:
+Una vez completada la instalación automática:
 
-- **🎨 Frontend (App Principal):** http://187.33.155.127:5173/
-- **📊 API Backend:** http://187.33.155.127:3001/api/health
-- **👑 Panel de Admin:** http://187.33.155.127:5173/admin
-- **🛍️ Catálogo de Productos:** http://187.33.155.127:5173/products
+- **🎨 Frontend (Principal):** http://187.33.155.127/
+- **👑 Panel de Admin:** http://187.33.155.127/admin
+- **📊 API Health Check:** http://187.33.155.127/api/health
+- **🛍️ Catálogo:** http://187.33.155.127/products
+- **🔄 Backup (Puerto 8080):** http://187.33.155.127:8080/
+
+---
+
+## ⚙️ Configuración Manual (Si necesitas hacerlo paso a paso)
+
+### Paso 1: Instalar Nginx
+
+```bash
+sudo apt update
+sudo apt install -y nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+
+### Paso 2: Configurar Nginx
+
+```bash
+# Copiar configuración de nginx
+sudo cp nginx-marvera.conf /etc/nginx/sites-available/marvera
+sudo ln -sf /etc/nginx/sites-available/marvera /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Verificar configuración
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Paso 3: Configurar Firewall
+
+```bash
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 8080/tcp  # Backup
+sudo ufw status
+```
+
+### Paso 4: Variables de Entorno
+
+```bash
+# Archivo .env (ya configurado)
+cat > .env << EOF
+VITE_API_URL=http://187.33.155.127
+VITE_MAPBOX_TOKEN=pk.test.placeholder
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+VITE_SOCKET_URL=http://187.33.155.127
+EOF
+```
+
+### Paso 5: Instalar y Ejecutar
+
+```bash
+# Instalar dependencias
+npm install
+cd backend && npm install && cd ..
+
+# Crear y ejecutar servicios
+sudo bash deploy-server.sh services
+```
+
+---
+
+## � Gestión de Servicios
+
+### Ver Estado de Servicios
+
+```bash
+# Estado de todos los servicios
+sudo systemctl status nginx marvera-backend marvera-frontend
+
+# Ver logs en tiempo real
+sudo journalctl -u marvera-backend -f    # Backend
+sudo journalctl -u marvera-frontend -f   # Frontend
+sudo tail -f /var/log/nginx/marvera_error.log  # Nginx
+```
+
+### Reiniciar Servicios
+
+```bash
+# Reiniciar individual
+sudo systemctl restart marvera-backend
+sudo systemctl restart marvera-frontend
+sudo systemctl restart nginx
+
+# Reiniciar todo
+sudo systemctl restart nginx marvera-backend marvera-frontend
+```
+
+### Detener/Iniciar Servicios
+
+```bash
+# Detener
+sudo systemctl stop marvera-backend marvera-frontend
+
+# Iniciar
+sudo systemctl start marvera-backend marvera-frontend
+```
 
 ---
 
 ## 🔍 Verificación y Troubleshooting
 
-### Verificar Puertos Activos
+### Verificar Que Todo Funciona
 
 ```bash
-# Verificar que los puertos estén escuchando
-ss -tuln | grep 5173  # Frontend
-ss -tuln | grep 3001  # Backend
+# Verificar puertos
+sudo ss -tuln | grep -E "(80|8080|5173|3001)"
 
-# Debe mostrar algo como:
-# tcp   LISTEN 0    511    0.0.0.0:5173    0.0.0.0:*
-# tcp   LISTEN 0    511    0.0.0.0:3001    0.0.0.0:*
+# Verificar nginx
+sudo nginx -t
+curl -I http://187.33.155.127/
+
+# Verificar servicios
+bash deploy-server.sh check
 ```
 
-### Verificar Configuración de Firewall
+### Problemas Comunes
 
+#### 1. "502 Bad Gateway"
 ```bash
-sudo ufw status verbose
+# Verificar que backend y frontend estén corriendo
+sudo systemctl status marvera-backend marvera-frontend
+
+# Reiniciar servicios
+sudo systemctl restart marvera-backend marvera-frontend
 ```
 
-### Ver Logs en Tiempo Real
-
+#### 2. "Connection Refused"
 ```bash
-# Logs del backend
-cd backend && npm run dev
+# Verificar firewall
+sudo ufw status
 
-# Logs del frontend
-npm run dev
+# Verificar nginx
+sudo systemctl status nginx
+sudo nginx -t
 ```
 
-### Solución de Problemas Comunes
-
-#### Problema: "Puerto en uso"
+#### 3. "CORS Errors"
 ```bash
-# Encontrar proceso usando el puerto
-sudo lsof -i :5173
-sudo lsof -i :3001
+# Verificar variables de entorno
+cat .env
 
-# Matar proceso si es necesario
-sudo kill -9 <PID>
+# Reiniciar todo
+sudo systemctl restart nginx marvera-backend marvera-frontend
 ```
-
-#### Problema: "Conexión rechazada"
-1. Verificar que el firewall permita los puertos
-2. Confirmar que el servidor esté escuchando en 0.0.0.0
-3. Verificar que no haya un proxy/balanceador bloqueando
-
-#### Problema: "CORS Error"
-- Verificar que el archivo `.env` tenga la IP correcta
-- Reiniciar ambos servidores después de cambiar variables de entorno
-
----
-
-## 👤 Credenciales de Admin
-
-**Para acceder al panel de administración:**
-- **URL:** http://187.33.155.127:5173/admin
-- **Email:** admin@marvera.com
-- **Contraseña:** admin123
 
 ---
 
 ## 🔄 Actualizar Código
 
 ```bash
-# Detener servidores (Ctrl+C en cada terminal)
+# Detener servicios
+sudo systemctl stop marvera-backend marvera-frontend
 
 # Actualizar código
 git pull origin main
-
-# Reinstalar dependencias si es necesario
 npm install
 cd backend && npm install && cd ..
 
-# Reiniciar servidores
+# Reiniciar servicios
+sudo systemctl start marvera-backend marvera-frontend
+sudo systemctl restart nginx
 ```
 
 ---
 
-## 📝 Notas Importantes
+## � Credenciales de Admin
 
-1. **Seguridad:** Cambiar las credenciales de admin en producción
-2. **SSL:** Para producción, configurar HTTPS con certificados SSL
-3. **Base de datos:** El proyecto usa SQLite, los datos se guardan en `backend/database.sqlite`
-4. **Archivos subidos:** Se almacenan en `backend/uploads/`
-5. **Logs:** Revisar logs regularmente para detectar problemas
+- **URL:** http://187.33.155.127/admin
+- **Email:** admin@marvera.com
+- **Contraseña:** admin123
 
 ---
 
-## 🆘 Soporte
+## 🛡️ Arquitectura Final
 
-Si encuentras problemas durante el despliegue:
+```
+Internet → Puerto 80 → Nginx → Puerto 5173 (Frontend)
+                    ├─────→ Puerto 3001 (Backend API)
+                    └─────→ WebSocket (Socket.IO)
+```
 
-1. Verificar los logs de ambos servidores
-2. Confirmar que todos los puertos estén abiertos
-3. Verificar la configuración del archivo `.env`
-4. Comprobar que Node.js esté actualizado (v18+)
+**Ventajas de usar Nginx:**
+- ✅ Un solo puerto público (80)
+- ✅ Proxy reverso automático
+- ✅ Manejo de WebSockets
+- ✅ Logs centralizados
+- ✅ Mayor estabilidad
 
-**Estado esperado del servidor:**
-- ✅ Puerto 5173 escuchando (Frontend)
-- ✅ Puerto 3001 escuchando (Backend)
-- ✅ Firewall configurado
-- ✅ Variables de entorno actualizadas
-- ✅ Aplicación accesible desde IP pública
+---
+
+## 📝 Comandos de Diagnóstico
+
+```bash
+# Ver todos los logs
+sudo journalctl -u nginx -u marvera-backend -u marvera-frontend -f
+
+# Verificar conectividad completa
+curl http://187.33.155.127/api/health
+
+# Estado completo del sistema
+bash deploy-server.sh check
+```

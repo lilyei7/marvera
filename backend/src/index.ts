@@ -18,7 +18,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://187.33.155.127:5173"],
+    origin: ["http://localhost:5173", "http://187.33.155.127", "http://187.33.155.127:8080"],
     methods: ["GET", "POST"]
   }
 });
@@ -49,7 +49,7 @@ app.use(limiter);
 
 // CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://187.33.155.127:5173'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://187.33.155.127', 'http://187.33.155.127:8080'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
