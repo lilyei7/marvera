@@ -8,7 +8,7 @@ import {
 } from '../store/slices/productsSlice';
 import { addToCart } from '../store/slices/cartSlice';
 import { addNotification } from '../store/slices/notificationSlice';
-import ProductImageViewer from '../components/ProductImageViewer';
+import ProductCard from '../components/ProductCard';
 import ProductDetailModal from '../components/ProductDetailModal';
 import type { Product, ProductCategory } from '../types';
 
@@ -37,7 +37,7 @@ const ProductsPage: React.FC = () => {
     dispatch(setSearchQuery(query));
   };
 
-  const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
+  const handleAddToCart = (product: Product, quantity: number = 1, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation(); // Evitar que se abra el modal
       const button = event.currentTarget as HTMLElement;
@@ -47,9 +47,9 @@ const ProductsPage: React.FC = () => {
       }, 600);
     }
     
-    dispatch(addToCart({ product, quantity: 1 }));
+    dispatch(addToCart({ product, quantity }));
     dispatch(addNotification({
-      message: `${product.name} agregado al carrito 🛒`,
+      message: `${quantity}x ${product.name} agregado al carrito 🛒`,
       type: 'success',
       duration: 2000
     }));
@@ -188,93 +188,14 @@ const ProductsPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="products-grid grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
+              <div className="products-grid grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
                 {filteredItems.map((product: any) => (
-                  <div
+                  <ProductCard
                     key={product.id}
-                    onClick={() => handleProductClick(product)}
-                    className="product-card bg-white rounded-lg sm:rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover-lift group cursor-pointer"
-                  >
-                    <div className="aspect-w-1 aspect-h-1 bg-light relative h-32 xs:h-36 sm:h-40 md:h-44 lg:h-48 xl:h-52">
-                      {/* Mostrar carrusel si hay múltiples imágenes, imagen única si hay solo una */}
-                      {product.images && product.images.length > 0 ? (
-                        <div className="w-full h-full">
-                          <ProductImageViewer
-                            images={product.images}
-                            productName={product.name}
-                            className="w-full h-full"
-                            showDots={product.images.length > 1}
-                            showCounter={product.images.length > 1}
-                            showThumbnails={false}
-                          />
-                        </div>
-                      ) : (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'https://via.placeholder.com/300x200/40E0D0/FFFFFF?text=🐟';
-                          }}
-                        />
-                      )}
-                      <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 z-20">
-                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
-                          product.freshness === 'Ultra Fresh' 
-                            ? 'bg-green-100 text-green-800'
-                            : product.freshness === 'Fresh'
-                            ? 'bg-light text-primary'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {product.freshness}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-2 sm:p-3 md:p-4 lg:p-5">
-                      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-1 group-hover:text-primary transition-colors duration-300 line-clamp-1">
-                        {product.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2 line-clamp-2">
-                        {product.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between mb-2 sm:mb-3 text-xs">
-                        <span className="text-secondary font-medium flex items-center">
-                          <span className="mr-1">📍</span>
-                          <span className="truncate">{product.origin}</span>
-                        </span>
-                        <span className="text-gray-500 whitespace-nowrap ml-2">
-                          {product.weight} {product.unit}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between flex-wrap gap-1 sm:gap-2">
-                        <div className="flex items-baseline">
-                          <span className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-primary">
-                            ${product.price}
-                          </span>
-                          <span className="text-xs text-gray-500 ml-1">
-                            / {product.unit}
-                          </span>
-                        </div>
-                        
-                        <button
-                          onClick={(e) => handleAddToCart(product, e)}
-                          disabled={!product.inStock}
-                          className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg font-medium transition-all duration-300 btn-add-to-cart text-xs sm:text-sm ${
-                            product.inStock
-                              ? 'bg-button hover:bg-primary text-white hover:scale-105 hover-lift'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          }`}
-                        >
-                          <span className="hidden xs:inline">🛒 </span>
-                          {product.inStock ? 'Agregar' : 'Agotado'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                    product={product}
+                    onAddToCart={handleAddToCart}
+                    onClick={handleProductClick}
+                  />
                 ))}
               </div>
             )}
