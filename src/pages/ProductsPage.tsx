@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { 
   setSelectedCategory, 
@@ -17,6 +17,7 @@ const ProductsPage: React.FC = () => {
   const productsState = useAppSelector((state) => state.products);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   
   const filteredItems = (productsState as any)?.filteredItems || [];
   const loading = (productsState as any)?.loading || false;
@@ -31,6 +32,7 @@ const ProductsPage: React.FC = () => {
 
   const handleCategoryChange = (category: ProductCategory | 'all') => {
     dispatch(setSelectedCategory(category));
+    setIsMobileFiltersOpen(false); // Cerrar el menú móvil después de seleccionar
   };
 
   const handleSearchChange = (query: string) => {
@@ -108,25 +110,56 @@ const ProductsPage: React.FC = () => {
     <div className="min-h-screen bg-light">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-primary mb-1 sm:mb-2">Catálogo de Mariscos</h1>
-          <p className="text-gray-600 text-xs sm:text-sm md:text-base">Productos frescos directamente del océano</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary mb-3">Catálogo de Mariscos</h1>
+          <p className="text-gray-600 text-lg sm:text-xl">Productos frescos directamente del océano</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-          {/* Sidebar Filters */}
-          <div className="lg:w-64 xl:w-72 flex-shrink-0">
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4 lg:p-6 lg:sticky lg:top-4">
-              <div className="flex items-center mb-3 sm:mb-4">
-                <FunnelIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary mr-1.5 sm:mr-2" />
-                <h2 className="text-sm sm:text-base lg:text-lg font-semibold text-primary">Filtros</h2>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Mobile Filter Button */}
+        <div className="lg:hidden mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Bar Mobile */}
+            <div className="flex-1">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Buscar productos..."
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                />
+                <MagnifyingGlassIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+            
+            {/* Filter Button */}
+            <button
+              onClick={() => setIsMobileFiltersOpen(true)}
+              className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition-colors whitespace-nowrap"
+            >
+              <FunnelIcon className="h-5 w-5" />
+              <span className="font-medium">Filtros</span>
+              {selectedCategory !== 'all' && (
+                <span className="bg-white text-primary text-xs px-2 py-0.5 rounded-full">1</span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Desktop Sidebar Filters */}
+          <div className="hidden lg:block lg:w-64 xl:w-72 flex-shrink-0">
+            <div className="bg-white rounded-xl shadow-sm p-6 lg:sticky lg:top-4">
+              <div className="flex items-center mb-6">
+                <FunnelIcon className="h-6 w-6 text-primary mr-3" />
+                <h2 className="text-xl font-semibold text-primary">Filtros</h2>
               </div>
 
               {/* Search */}
-              <div className="mb-3 sm:mb-4 lg:mb-6">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+              <div className="mb-8">
+                <label className="block text-lg font-medium text-gray-700 mb-3">
                   Buscar
                 </label>
                 <div className="relative">
@@ -135,21 +168,21 @@ const ProductsPage: React.FC = () => {
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     placeholder="Buscar productos..."
-                    className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-xs sm:text-sm transition-all duration-200"
+                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-lg transition-all duration-200"
                   />
-                  <MagnifyingGlassIcon className="absolute left-2 sm:left-3 top-1.5 sm:top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <MagnifyingGlassIcon className="absolute left-4 top-4 h-6 w-6 text-gray-400" />
                 </div>
               </div>
 
               {/* Categories */}
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
+                <label className="block text-lg font-medium text-gray-700 mb-4">
                   Categorías
                 </label>
-                <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-3">
                   <button
                     onClick={() => handleCategoryChange('all')}
-                    className={`w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg transition-colors text-xs sm:text-sm ${
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors text-lg ${
                       selectedCategory === 'all'
                         ? 'bg-button text-white'
                         : 'text-gray-700 hover:bg-light'
@@ -161,7 +194,7 @@ const ProductsPage: React.FC = () => {
                     <button
                       key={category}
                       onClick={() => handleCategoryChange(category)}
-                      className={`w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg transition-colors text-xs sm:text-sm ${
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors text-lg ${
                         selectedCategory === category
                           ? 'bg-button text-white'
                           : 'text-gray-700 hover:bg-light'
@@ -188,7 +221,7 @@ const ProductsPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="products-grid grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+              <div className="products-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8 px-2 sm:px-0">
                 {filteredItems.map((product: any) => (
                   <ProductCard
                     key={product.id}
@@ -202,6 +235,79 @@ const ProductsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Filters Modal */}
+      {isMobileFiltersOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => setIsMobileFiltersOpen(false)}
+          ></div>
+          
+          {/* Modal */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-xl max-h-[80vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-semibold text-primary flex items-center">
+                <FunnelIcon className="h-6 w-6 mr-2" />
+                Filtros
+              </h2>
+              <button
+                onClick={() => setIsMobileFiltersOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="h-6 w-6 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Filter Content */}
+            <div className="p-4">
+              {/* Categories */}
+              <div className="mb-6">
+                <label className="block text-lg font-medium text-gray-700 mb-4">
+                  Categorías
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleCategoryChange('all')}
+                    className={`text-center px-4 py-3 rounded-lg transition-colors ${
+                      selectedCategory === 'all'
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {categoryLabels.all}
+                  </button>
+                  {categories.map((category: ProductCategory) => (
+                    <button
+                      key={category}
+                      onClick={() => handleCategoryChange(category)}
+                      className={`text-center px-4 py-3 rounded-lg transition-colors ${
+                        selectedCategory === category
+                          ? 'bg-primary text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {categoryLabels[category]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              {selectedCategory !== 'all' && (
+                <button
+                  onClick={() => handleCategoryChange('all')}
+                  className="w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Product Detail Modal */}
       <ProductDetailModal

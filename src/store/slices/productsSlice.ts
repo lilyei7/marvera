@@ -35,10 +35,21 @@ export const fetchProducts = createAsyncThunk(
   async () => {
     try {
       const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE_URL}/api/products`);
-      if (!response.ok) {
-        throw new Error('Error fetching products');
+      
+      // Solo intentar conectar si no es localhost development
+      if (API_BASE_URL === 'http://localhost:3001') {
+        console.log('🏠 Modo desarrollo - usando datos locales de productos');
+        return []; // Retornar array vacío para datos locales
       }
+
+      const response = await fetch(`${API_BASE_URL}/api/products`, {
+        signal: AbortSignal.timeout(5000) // 5 segundos timeout
+      });
+      
+      if (!response.ok) {
+        throw new Error('API no disponible');
+      }
+      
       const data = await response.json();
       
       // Convertir productos del backend al formato del frontend
@@ -48,7 +59,7 @@ export const fetchProducts = createAsyncThunk(
         description: product.description,
         price: product.price,
         category: getCategorySlug(product.categoryName),
-        imageUrl: product.images && product.images.length > 0 ? product.images[0] : '🐟',
+        imageUrl: getProductImage(product),
         inStock: product.stock > 0,
         origin: 'MarVera',
         freshness: 'Fresh',
@@ -62,8 +73,8 @@ export const fetchProducts = createAsyncThunk(
       
       return products;
     } catch (error) {
-      console.error('Error fetching products:', error);
-      // En caso de error, devolver array vacío en lugar de mock data
+      // Silenciosamente usar datos locales
+      console.log('🏠 Modo desarrollo - usando datos locales de productos');
       return [];
     }
   }
@@ -82,6 +93,32 @@ function getCategorySlug(categoryName: string): ProductCategory {
   };
   
   return categoryMap[categoryName] || 'otros';
+}
+
+// Función helper para obtener imagen del producto
+function getProductImage(product: any): string {
+  // Si tiene imagen propia, usarla
+  if (product.image && product.image.trim() !== '') {
+    return product.image;
+  }
+  
+  // Si tiene imágenes múltiples, usar la primera
+  if (product.images && product.images.length > 0) {
+    return product.images[0];
+  }
+  
+  // Imagen por defecto basada en categoría
+  const categoryImages: { [key: string]: string } = {
+    'pescados': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop&crop=center',
+    'camarones': 'https://images.unsplash.com/photo-1553611892-7ba35ad6f0dd?w=400&h=300&fit=crop&crop=center',
+    'ostras': 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=300&fit=crop&crop=center',
+    'langostas': 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400&h=300&fit=crop&crop=center',
+    'cangrejos': 'https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop&crop=center',
+    'moluscos': 'https://images.unsplash.com/photo-1625943553852-781c6dd46faa?w=400&h=300&fit=crop&crop=center'
+  };
+  
+  const category = getCategorySlug(product.categoryName);
+  return categoryImages[category] || categoryImages['pescados'];
 }
 
 const productsSlice = createSlice({

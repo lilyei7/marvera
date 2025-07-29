@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { store } from './store';
 import { fetchProducts } from './store/slices/productsSlice';
+import { fetchFeaturedProducts } from './store/slices/featuredProductsSlice';
 import Navigation from './components/Navigation';
 import ShoppingCart from './components/ShoppingCart';
 import Footer from './components/Footer';
@@ -10,12 +11,14 @@ import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import AdminPanel from './components/AdminPanel';
 import AdminAccess from './components/AdminAccess';
+import AdminDashboard from './pages/AdminDashboard';
 import NotificationManager from './components/NotificationManager';
 import './App.css';
 
 function AppContent() {
   useEffect(() => {
     store.dispatch(fetchProducts());
+    store.dispatch(fetchFeaturedProducts());
   }, []);
 
   return (
@@ -28,6 +31,7 @@ function AppContent() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/admin-access" element={<AdminAccess />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Routes>
         </main>
         <Footer />
