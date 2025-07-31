@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { 
@@ -14,6 +15,7 @@ import type { Product, ProductCategory } from '../types';
 
 const ProductsPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const [searchParams] = useSearchParams();
   const productsState = useAppSelector((state) => state.products);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,6 +31,15 @@ const ProductsPage: React.FC = () => {
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
+
+  // Efecto para capturar parámetros de búsqueda de la URL
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      console.log('🔍 Búsqueda desde URL:', searchFromUrl);
+      dispatch(setSearchQuery(searchFromUrl));
+    }
+  }, [searchParams, dispatch]);
 
   const handleCategoryChange = (category: ProductCategory | 'all') => {
     dispatch(setSelectedCategory(category));
@@ -115,6 +126,29 @@ const ProductsPage: React.FC = () => {
           <p className="text-gray-600 text-lg sm:text-xl">Productos frescos directamente del océano</p>
         </div>
       </div>
+
+      {/* Search Results Indicator */}
+      {searchQuery && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-blue-800 text-sm">
+                🔍 Mostrando resultados para: <span className="font-semibold">"{searchQuery}"</span>
+                {filteredItems.length > 0 && (
+                  <span className="ml-2 text-blue-600">({filteredItems.length} productos encontrados)</span>
+                )}
+              </p>
+              <button
+                onClick={() => dispatch(setSearchQuery(''))}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+              >
+                <XMarkIcon className="h-4 w-4" />
+                Limpiar búsqueda
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Mobile Filter Button */}

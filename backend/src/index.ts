@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { dbManager } from './database/database';
+import prisma from './lib/prisma';
 import { AuthService } from './services/authService';
 
 // Importar rutas
@@ -13,6 +13,9 @@ import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
 import uploadRoutes from './routes/upload';
+import branchRoutes from './routes/api/branches';
+import adminProductRoutes from './routes/adminProducts';
+const wholesaleProductRoutes = require('../routes/wholesaleProducts');
 
 const app = express();
 const server = http.createServer(app);
@@ -41,16 +44,28 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting
+// Rate limiting - más permisivo en desarrollo
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // límite de 100 requests por windowMs
+  windowMs: 1 * 60 * 1000, // 1 minuto en lugar de 15
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 1000 requests en desarrollo, 100 en producción
   message: {
     success: false,
     message: 'Demasiadas peticiones, intenta de nuevo más tarde'
+  },
+  skip: (req) => {
+    // Saltar rate limiting para desarrollo local
+    const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    return isDevelopment || isLocalhost;
   }
 });
-app.use(limiter);
+
+// Solo aplicar rate limiting en producción
+if (process.env.NODE_ENV === 'production') {
+  app.use(limiter);
+} else {
+  console.log('🔓 Rate limiting deshabilitado en desarrollo');
+}
 
 // CORS
 app.use(cors({
@@ -90,6 +105,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/wholesale-products', wholesaleProductRoutes);
 
 // Ruta de health check
 app.get('/api/health', (req, res) => {
@@ -180,7 +198,16 @@ server.listen(PORT, async () => {
   console.log(`📊 API disponible en http://localhost:${PORT}/api`);
   console.log(`🌐 API disponible externamente en http://187.33.155.127:${PORT}/api`);
   console.log(`🔌 Socket.IO habilitado para tracking en tiempo real`);
+  console.log(`💾 Prisma conectado a la base de datos SQLite`);
   
-  // Crear usuario admin por defecto
-  await AuthService.createAdminUser();
+  // Verificar conexión con Prisma
+  try {
+    await prisma.$connect();
+    console.log('✅ Conexión a Prisma establecida correctamente');
+    
+    // Crear usuario admin por defecto
+    await AuthService.createAdminUser();
+  } catch (error) {
+    console.error('❌ Error conectando a Prisma:', error);
+  }
 });

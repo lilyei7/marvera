@@ -1,57 +1,78 @@
-import { dbManager } from '../database/database';
+import prisma from '../lib/prisma';
 import { Order, OrderItem } from '../types';
 
 export class OrderService {
 
   static async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>): Promise<Order | null> {
     try {
-      const db = dbManager.getDb();
-      
       // Generar número de orden único
       const orderNumber = this.generateOrderNumber();
 
-      const orderId = await new Promise<number>((resolve, reject) => {
-        db.run(
-          `INSERT INTO orders 
-           (orderNumber, user_id, status, subtotal, shippingCost, tax, total, paymentMethod, paymentStatus, shippingAddress, notes) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            orderNumber,
-            orderData.user_id,
-            orderData.status || 'pending',
-            orderData.subtotal,
-            orderData.shippingCost || 0,
-            orderData.tax || 0,
-            orderData.total,
-            orderData.paymentMethod,
-            orderData.paymentStatus || 'pending',
-            orderData.shippingAddress,
-            orderData.notes
-          ],
-          function(err) {
-            if (err) reject(err);
-            else resolve(this.lastID);
+      const order = await prisma.order.create({
+        data: {
+          orderNumber,
+          userId: orderData.user_id,
+          status: orderData.status || 'pending',
+          subtotal: orderData.subtotal,
+          shippingCost: orderData.shippingCost || 0,
+          tax: orderData.tax || 0,
+          total: orderData.total,
+          paymentMethod: orderData.paymentMethod,
+          paymentStatus: orderData.paymentStatus || 'pending',
+          shippingAddress: orderData.shippingAddress,
+          notes: orderData.notes,
+          items: orderData.items ? {
+            create: orderData.items.map(item => ({
+              productId: item.product_id,
+              quantity: item.quantity,
+              price: item.price
+            }))
+          } : undefined
+        },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          driver: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                  unit: true
+                }
+              }
+            }
           }
-        );
+        }
       });
 
-      // Insertar items del pedido
-      if (orderData.items && orderData.items.length > 0) {
-        for (const item of orderData.items) {
-          await new Promise<void>((resolve, reject) => {
-            db.run(
-              'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-              [orderId, item.product_id, item.quantity, item.price],
-              (err) => {
-                if (err) reject(err);
-                else resolve();
-              }
-            );
-          });
-        }
-      }
-
-      return await this.getOrderById(orderId);
+      return {
+        ...order,
+        user_id: order.userId,
+        driver_id: order.driverId,
+        firstName: order.user?.firstName,
+        lastName: order.user?.lastName,
+        email: order.user?.email,
+        driverFirstName: order.driver?.firstName,
+        driverLastName: order.driver?.lastName,
+        items: order.items.map(item => ({
+          ...item,
+          product_id: item.productId,
+          order_id: item.orderId,
+          productName: item.product?.name,
+          unit: item.product?.unit
+        }))
+      };
     } catch (error) {
       console.error('Error creando orden:', error);
       return null;
@@ -60,43 +81,53 @@ export class OrderService {
 
   static async getOrderById(id: number): Promise<Order | null> {
     try {
-      const db = dbManager.getDb();
-
-      const order = await new Promise<Order | null>((resolve, reject) => {
-        db.get(
-          `SELECT o.*, u.firstName, u.lastName, u.email, d.firstName as driverFirstName, d.lastName as driverLastName
-           FROM orders o
-           LEFT JOIN users u ON o.user_id = u.id
-           LEFT JOIN drivers d ON o.driver_id = d.id
-           WHERE o.id = ?`,
-          [id],
-          (err, row: any) => {
-            if (err) reject(err);
-            else resolve(row || null);
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          driver: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                  unit: true
+                }
+              }
+            }
           }
-        );
+        }
       });
 
       if (!order) return null;
 
-      // Obtener items del pedido
-      const items = await new Promise<OrderItem[]>((resolve, reject) => {
-        db.all(
-          `SELECT oi.*, p.name as productName, p.unit
-           FROM order_items oi
-           LEFT JOIN products p ON oi.product_id = p.id
-           WHERE oi.order_id = ?`,
-          [id],
-          (err, rows: any[]) => {
-            if (err) reject(err);
-            else resolve(rows || []);
-          }
-        );
-      });
-
       return {
         ...order,
-        items
+        user_id: order.userId,
+        driver_id: order.driverId,
+        firstName: order.user?.firstName,
+        lastName: order.user?.lastName,
+        email: order.user?.email,
+        driverFirstName: order.driver?.firstName,
+        driverLastName: order.driver?.lastName,
+        items: order.items.map(item => ({
+          ...item,
+          product_id: item.productId,
+          order_id: item.orderId,
+          productName: item.product?.name,
+          unit: item.product?.unit
+        }))
       };
     } catch (error) {
       console.error('Error obteniendo orden:', error);
@@ -106,44 +137,43 @@ export class OrderService {
 
   static async getOrdersByUserId(userId: number): Promise<Order[]> {
     try {
-      const db = dbManager.getDb();
-
-      return new Promise<Order[]>((resolve, reject) => {
-        db.all(
-          `SELECT o.*, d.firstName as driverFirstName, d.lastName as driverLastName
-           FROM orders o
-           LEFT JOIN drivers d ON o.driver_id = d.id
-           WHERE o.user_id = ?
-           ORDER BY o.createdAt DESC`,
-          [userId],
-          async (err, rows: any[]) => {
-            if (err) {
-              reject(err);
-            } else {
-              // Obtener items para cada orden
-              const ordersWithItems = await Promise.all(
-                rows.map(async (order) => {
-                  const items = await new Promise<OrderItem[]>((resolve, reject) => {
-                    db.all(
-                      `SELECT oi.*, p.name as productName, p.unit
-                       FROM order_items oi
-                       LEFT JOIN products p ON oi.product_id = p.id
-                       WHERE oi.order_id = ?`,
-                      [order.id],
-                      (err, itemRows: any[]) => {
-                        if (err) reject(err);
-                        else resolve(itemRows || []);
-                      }
-                    );
-                  });
-                  return { ...order, items };
-                })
-              );
-              resolve(ordersWithItems);
+      const orders = await prisma.order.findMany({
+        where: { userId },
+        include: {
+          driver: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                  unit: true
+                }
+              }
             }
           }
-        );
+        },
+        orderBy: { createdAt: 'desc' }
       });
+
+      return orders.map(order => ({
+        ...order,
+        user_id: order.userId,
+        driver_id: order.driverId,
+        driverFirstName: order.driver?.firstName,
+        driverLastName: order.driver?.lastName,
+        items: order.items.map(item => ({
+          ...item,
+          product_id: item.productId,
+          order_id: item.orderId,
+          productName: item.product?.name,
+          unit: item.product?.unit
+        }))
+      }));
     } catch (error) {
       console.error('Error obteniendo órdenes del usuario:', error);
       return [];
@@ -152,44 +182,52 @@ export class OrderService {
 
   static async getAllOrders(): Promise<Order[]> {
     try {
-      const db = dbManager.getDb();
-
-      return new Promise<Order[]>((resolve, reject) => {
-        db.all(
-          `SELECT o.*, u.firstName, u.lastName, u.email, d.firstName as driverFirstName, d.lastName as driverLastName
-           FROM orders o
-           LEFT JOIN users u ON o.user_id = u.id
-           LEFT JOIN drivers d ON o.driver_id = d.id
-           ORDER BY o.createdAt DESC`,
-          [],
-          async (err, rows: any[]) => {
-            if (err) {
-              reject(err);
-            } else {
-              // Obtener items para cada orden
-              const ordersWithItems = await Promise.all(
-                rows.map(async (order) => {
-                  const items = await new Promise<OrderItem[]>((resolve, reject) => {
-                    db.all(
-                      `SELECT oi.*, p.name as productName, p.unit
-                       FROM order_items oi
-                       LEFT JOIN products p ON oi.product_id = p.id
-                       WHERE oi.order_id = ?`,
-                      [order.id],
-                      (err, itemRows: any[]) => {
-                        if (err) reject(err);
-                        else resolve(itemRows || []);
-                      }
-                    );
-                  });
-                  return { ...order, items };
-                })
-              );
-              resolve(ordersWithItems);
+      const orders = await prisma.order.findMany({
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          driver: {
+            select: {
+              firstName: true,
+              lastName: true
+            }
+          },
+          items: {
+            include: {
+              product: {
+                select: {
+                  name: true,
+                  unit: true
+                }
+              }
             }
           }
-        );
+        },
+        orderBy: { createdAt: 'desc' }
       });
+
+      return orders.map(order => ({
+        ...order,
+        user_id: order.userId,
+        driver_id: order.driverId,
+        firstName: order.user?.firstName,
+        lastName: order.user?.lastName,
+        email: order.user?.email,
+        driverFirstName: order.driver?.firstName,
+        driverLastName: order.driver?.lastName,
+        items: order.items.map(item => ({
+          ...item,
+          product_id: item.productId,
+          order_id: item.orderId,
+          productName: item.product?.name,
+          unit: item.product?.unit
+        }))
+      }));
     } catch (error) {
       console.error('Error obteniendo todas las órdenes:', error);
       return [];
@@ -198,17 +236,9 @@ export class OrderService {
 
   static async updateOrderStatus(orderId: number, status: Order['status']): Promise<Order | null> {
     try {
-      const db = dbManager.getDb();
-
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          'UPDATE orders SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
-          [status, orderId],
-          (err) => {
-            if (err) reject(err);
-            else resolve();
-          }
-        );
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status }
       });
 
       return await this.getOrderById(orderId);
@@ -220,17 +250,12 @@ export class OrderService {
 
   static async assignDriver(orderId: number, driverId: number): Promise<Order | null> {
     try {
-      const db = dbManager.getDb();
-
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          'UPDATE orders SET driver_id = ?, status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
-          [driverId, 'shipped', orderId],
-          (err) => {
-            if (err) reject(err);
-            else resolve();
-          }
-        );
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { 
+          driverId: driverId,
+          status: 'shipped'
+        }
       });
 
       return await this.getOrderById(orderId);

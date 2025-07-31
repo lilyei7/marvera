@@ -41,19 +41,43 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
     // Función para cargar imagen
     const loadImage = (imageUrl: string, isFallback: boolean = false) => {
-      const img = new Image();
-      
-      img.onload = () => {
-        setImageSrc(imageUrl);
-        setIsLoaded(true);
-        setHasError(false);
-        if (!isFallback) {
-          onLoad?.();
+      try {
+        // Check if URL is valid
+        new URL(imageUrl);
+        
+        const img = new Image();
+        
+        img.onload = () => {
+          setImageSrc(imageUrl);
+          setIsLoaded(true);
+          setHasError(false);
+          if (!isFallback) {
+            onLoad?.();
+          }
+        };
+        
+        img.onerror = () => {
+          if (!isFallback && fallbackImage && !isAttemptingFallback) {
+            setIsAttemptingFallback(true);
+            loadImage(fallbackImage, true);
+          } else {
+            setHasError(true);
+            setIsLoaded(false);
+            onError?.();
+          }
+        };
+
+        // Forzar la carga inmediata
+        img.src = imageUrl;
+        
+        // Si es prioritaria, también forzar la carga en el DOM
+        if (priority && !isFallback) {
+          img.loading = 'eager';
         }
-      };
-      
-      img.onerror = () => {
-        if (!isFallback && fallbackImage && !isAttemptingFallback) {
+      } catch (e) {
+        // Invalid URL, use fallback immediately
+        console.error('Invalid image URL:', imageUrl);
+        if (fallbackImage && !isAttemptingFallback) {
           setIsAttemptingFallback(true);
           loadImage(fallbackImage, true);
         } else {
@@ -61,15 +85,6 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
           setIsLoaded(false);
           onError?.();
         }
-      };
-
-      // Forzar la carga inmediata
-      img.src = imageUrl;
-      
-      // Si es prioritaria, también forzar la carga en el DOM
-      if (priority && !isFallback) {
-        img.crossOrigin = 'anonymous';
-        img.loading = 'eager';
       }
     };
 

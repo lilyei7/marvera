@@ -51,7 +51,7 @@ const ProductsManager: React.FC = () => {
     isFeatured: false
   });
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
 
   useEffect(() => {
     fetchProducts();
@@ -68,89 +68,9 @@ const ProductsManager: React.FC = () => {
       setProducts(data.products || []);
       setError(null);
     } catch (error) {
-      console.error('Error:', error);
-      setError('Error al cargar productos');
-      // Datos de ejemplo para desarrollo
-      setProducts([
-        {
-          id: '1',
-          name: 'Salmón Atlántico Premium',
-          description: 'Salmón fresco del Atlántico Norte, ideal para sushi y parrilla',
-          price: 45.99,
-          category: 'pescados',
-          categoryName: 'Pescados',
-          image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop&crop=center',
-          inStock: true,
-          unit: 'kg',
-          isFeatured: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Camarones Gigantes',
-          description: 'Camarones frescos tamaño jumbo, perfectos para cualquier ocasión',
-          price: 35.50,
-          category: 'camarones',
-          categoryName: 'Camarones',
-          image: 'https://images.unsplash.com/photo-1553611892-7ba35ad6f0dd?w=400&h=300&fit=crop&crop=center',
-          inStock: true,
-          unit: 'kg',
-          isFeatured: false,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '3',
-          name: 'Langosta Viva Maine',
-          description: 'Langosta fresca viva del Maine, entrega garantizada',
-          price: 89.99,
-          category: 'langostas',
-          categoryName: 'Langostas',
-          image: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400&h=300&fit=crop&crop=center',
-          inStock: true,
-          unit: 'pz',
-          isFeatured: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '4',
-          name: 'Ostras Frescas',
-          description: 'Ostras frescas del Pacífico, cosechadas diariamente',
-          price: 24.99,
-          category: 'ostras',
-          categoryName: 'Ostras',
-          image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=300&fit=crop&crop=center',
-          inStock: true,
-          unit: 'docena',
-          isFeatured: false,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '5',
-          name: 'Cangrejo Real',
-          description: 'Cangrejo real de Alaska, sabor incomparable',
-          price: 125.00,
-          category: 'cangrejos',
-          categoryName: 'Cangrejos',
-          image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop&crop=center',
-          inStock: false,
-          unit: 'kg',
-          isFeatured: false,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '6',
-          name: 'Mejillones Azules',
-          description: 'Mejillones frescos cultivados en aguas limpias',
-          price: 18.50,
-          category: 'moluscos',
-          categoryName: 'Moluscos',
-          image: 'https://images.unsplash.com/photo-1625943553852-781c6dd46faa?w=400&h=300&fit=crop&crop=center',
-          inStock: true,
-          unit: 'kg',
-          isFeatured: false,
-          createdAt: new Date().toISOString()
-        }
-      ]);
+      console.error('Error al cargar productos:', error);
+      setError('Error al cargar productos de la base de datos');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -164,16 +84,8 @@ const ProductsManager: React.FC = () => {
       const data = await response.json();
       setCategories(data.categories || []);
     } catch (error) {
-      console.error('Error:', error);
-      // Categorías de ejemplo
-      setCategories([
-        { id: 'pescados', name: 'Pescados', emoji: '🐟' },
-        { id: 'camarones', name: 'Camarones', emoji: '🦐' },
-        { id: 'ostras', name: 'Ostras', emoji: '🦪' },
-        { id: 'langostas', name: 'Langostas', emoji: '🦞' },
-        { id: 'cangrejos', name: 'Cangrejos', emoji: '🦀' },
-        { id: 'moluscos', name: 'Moluscos', emoji: '🐚' }
-      ]);
+      console.error('Error al cargar categorías:', error);
+      setCategories([]);
     }
   };
 

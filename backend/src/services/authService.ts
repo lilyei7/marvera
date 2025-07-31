@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { dbManager } from '../database/database';
+import prisma from '../lib/prisma';
 import { User, LoginRequest, RegisterRequest, AuthResponse } from '../types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'marvera-jwt-secret-key-2025';
@@ -10,18 +10,9 @@ export class AuthService {
   
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      const db = dbManager.getDb();
-      
       // Verificar si el usuario ya existe
-      const existingUser = await new Promise<User | null>((resolve, reject) => {
-        db.get(
-          'SELECT * FROM users WHERE email = ?',
-          [userData.email],
-          (err, row: User) => {
-            if (err) reject(err);
-            else resolve(row || null);
-          }
-        );
+      const existingUser = await prisma.user.findUnique({
+        where: { email: userData.email }
       });
 
       if (existingUser) {
@@ -35,29 +26,27 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(userData.password, 10);
 
       // Crear usuario
-      const userId = await new Promise<number>((resolve, reject) => {
-        db.run(
-          `INSERT INTO users (email, password, firstName, lastName, phone, address, role) 
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [userData.email, hashedPassword, userData.firstName, userData.lastName, 
-           userData.phone || null, userData.address || null, 'customer'],
-          function(err) {
-            if (err) reject(err);
-            else resolve(this.lastID);
-          }
-        );
-      });
-
-      // Obtener usuario creado
-      const newUser = await new Promise<User>((resolve, reject) => {
-        db.get(
-          'SELECT id, email, firstName, lastName, phone, address, role, isActive, createdAt FROM users WHERE id = ?',
-          [userId],
-          (err, row: User) => {
-            if (err) reject(err);
-            else resolve(row);
-          }
-        );
+      const newUser = await prisma.user.create({
+        data: {
+          email: userData.email,
+          password: hashedPassword,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phone: userData.phone || null,
+          address: userData.address || null,
+          role: 'customer'
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          address: true,
+          role: true,
+          isActive: true,
+          createdAt: true
+        }
       });
 
       // Generar token
@@ -84,18 +73,12 @@ export class AuthService {
 
   static async login(loginData: LoginRequest): Promise<AuthResponse> {
     try {
-      const db = dbManager.getDb();
-
       // Buscar usuario
-      const user = await new Promise<User | null>((resolve, reject) => {
-        db.get(
-          'SELECT * FROM users WHERE email = ? AND isActive = 1',
-          [loginData.email],
-          (err, row: User) => {
-            if (err) reject(err);
-            else resolve(row || null);
-          }
-        );
+      const user = await prisma.user.findFirst({
+        where: {
+          email: loginData.email,
+          isActive: true
+        }
       });
 
       if (!user) {
@@ -142,46 +125,52 @@ export class AuthService {
 
   static verifyToken(token: string): any {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      console.log('🔐 AuthService.verifyToken - Token a verificar:', token.substring(0, 20) + '...');
+      console.log('🔐 AuthService.verifyToken - JWT_SECRET:', JWT_SECRET ? 'Secret presente' : 'Secret faltante');
+      
+      const decoded = jwt.verify(token, JWT_SECRET);
+      console.log('🔐 AuthService.verifyToken - Token válido, decoded:', decoded);
+      return decoded;
     } catch (error) {
+      console.error('🔐 AuthService.verifyToken - Error:', error);
       return null;
     }
   }
 
-  static async getUserById(userId: number): Promise<User | null> {
+  static async getUserById(userId: number): Promise<any | null> {
     try {
-      const db = dbManager.getDb();
+      console.log('🔐 AuthService.getUserById - Buscando usuario ID:', userId);
       
-      return new Promise<User | null>((resolve, reject) => {
-        db.get(
-          'SELECT id, email, firstName, lastName, phone, address, role, isActive, createdAt FROM users WHERE id = ?',
-          [userId],
-          (err, row: User) => {
-            if (err) reject(err);
-            else resolve(row || null);
-          }
-        );
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          createdAt: true
+        }
       });
+
+      console.log('🔐 AuthService.getUserById - Usuario encontrado:', user ? `ID ${user.id}, role: ${user.role}, active: ${user.isActive}` : 'No encontrado');
+      return user;
     } catch (error) {
-      console.error('Error obteniendo usuario:', error);
+      console.error('🔐 AuthService.getUserById - Error:', error);
       return null;
     }
   }
 
   static async createAdminUser(): Promise<void> {
     try {
-      const db = dbManager.getDb();
-      
       // Verificar si ya existe un admin
-      const existingAdmin = await new Promise<User | null>((resolve, reject) => {
-        db.get(
-          'SELECT * FROM users WHERE email = ? AND role = ?',
-          ['admin', 'admin'],
-          (err, row: User) => {
-            if (err) reject(err);
-            else resolve(row || null);
-          }
-        );
+      const existingAdmin = await prisma.user.findFirst({
+        where: {
+          email: 'admin',
+          role: 'admin'
+        }
       });
 
       if (existingAdmin) {
@@ -193,16 +182,15 @@ export class AuthService {
       console.log('🔨 Creando usuario admin...');
       const hashedPassword = await bcrypt.hash('admin', 10);
 
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          `INSERT INTO users (email, password, firstName, lastName, role, isActive) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          ['admin', hashedPassword, 'Administrador', 'MarVera', 'admin', 1],
-          function(err) {
-            if (err) reject(err);
-            else resolve();
-          }
-        );
+      await prisma.user.create({
+        data: {
+          email: 'admin',
+          password: hashedPassword,
+          firstName: 'Administrador',
+          lastName: 'MarVera',
+          role: 'admin',
+          isActive: true
+        }
       });
 
       console.log('✅ Usuario admin creado - email: admin, password: admin');

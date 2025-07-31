@@ -25,7 +25,7 @@ const FeaturedProductsAdmin: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
       const response = await fetch(`${API_BASE_URL}/api/products`);
       
       if (!response.ok) {
@@ -49,52 +49,9 @@ const FeaturedProductsAdmin: React.FC = () => {
       setProducts(productsWithFeatured);
       setError(null);
     } catch (err) {
-      setError('Error al cargar productos');
+      setError('Error al cargar productos de la base de datos');
       console.error('Error fetching products:', err);
-      
-      // Datos de ejemplo si falla la API
-      setProducts([
-        {
-          id: '1',
-          name: 'Salmón Noruego',
-          description: 'Fresco del Atlántico Norte',
-          price: 45.99,
-          category: 'Pescados',
-          inStock: true,
-          unit: 'kg',
-          isFeatured: true
-        },
-        {
-          id: '2',
-          name: 'Langosta Viva de Maine',
-          description: 'Entrega viva para máxima frescura',
-          price: 89.99,
-          category: 'Mariscos',
-          inStock: true,
-          unit: 'kg',
-          isFeatured: true
-        },
-        {
-          id: '3',
-          name: 'Ostras Premium',
-          description: 'Cosechadas a diario, saladas y deliciosas',
-          price: 24.99,
-          category: 'Moluscos',
-          inStock: true,
-          unit: 'docena',
-          isFeatured: true
-        },
-        {
-          id: '4',
-          name: 'Camarones Tigre',
-          description: 'Grandes y jugosos',
-          price: 32.99,
-          category: 'Camarones',
-          inStock: true,
-          unit: 'kg',
-          isFeatured: false
-        }
-      ]);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -112,7 +69,7 @@ const FeaturedProductsAdmin: React.FC = () => {
       );
 
       // TODO: Llamada a la API para actualizar en la base de datos
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
       const response = await fetch(`${API_BASE_URL}/api/products/${productId}/featured`, {
         method: 'PATCH',
         headers: {

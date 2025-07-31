@@ -146,10 +146,36 @@ export class DatabaseManager {
       )
     `);
 
+    // Tabla de sucursales
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS branches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(255) NOT NULL,
+        address TEXT NOT NULL,
+        city VARCHAR(100) NOT NULL,
+        state VARCHAR(100) NOT NULL,
+        postalCode VARCHAR(20) NOT NULL,
+        phone VARCHAR(20) NOT NULL,
+        email VARCHAR(255),
+        latitude DECIMAL(10,8),
+        longitude DECIMAL(11,8),
+        openingHours TEXT,
+        services TEXT,
+        manager VARCHAR(255),
+        description TEXT,
+        image VARCHAR(255),
+        isActive BOOLEAN DEFAULT 1,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Insertar categorías por defecto
     this.insertDefaultCategories();
     // Insertar productos por defecto
     this.insertDefaultProducts();
+    // Insertar sucursales por defecto
+    this.insertDefaultBranches();
     // Crear usuario admin por defecto
     this.createAdminUser();
   }
@@ -243,6 +269,68 @@ export class DatabaseManager {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [product.name, product.slug, product.description, product.price, 
          product.category_id, product.stock, product.unit, product.isFeatured]
+      );
+    });
+  }
+
+  private insertDefaultBranches(): void {
+    const branches = [
+      {
+        name: 'MarVera Centro',
+        address: 'Av. Revolución 1234, Col. Centro',
+        city: 'Ciudad de México',
+        state: 'CDMX',
+        postalCode: '06000',
+        phone: '55-1234-5678',
+        email: 'centro@marvera.com',
+        latitude: 19.4326,
+        longitude: -99.1332,
+        openingHours: 'Lunes a Domingo: 8:00 AM - 8:00 PM',
+        services: 'Venta al menudeo, Preparación de mariscos, Entrega a domicilio',
+        manager: 'Carlos González',
+        description: 'Nuestra sucursal principal en el corazón de la ciudad'
+      },
+      {
+        name: 'MarVera Norte',
+        address: 'Av. San Jerónimo 567, Col. San Jerónimo',
+        city: 'Ciudad de México',
+        state: 'CDMX',
+        postalCode: '10400',
+        phone: '55-2345-6789',
+        email: 'norte@marvera.com',
+        latitude: 19.3762,
+        longitude: -99.2051,
+        openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM, Domingo: 10:00 AM - 6:00 PM',
+        services: 'Venta al menudeo, Mayoreo, Catering',
+        manager: 'María López',
+        description: 'Amplia variedad de productos del mar en la zona norte'
+      },
+      {
+        name: 'MarVera Sur',
+        address: 'Calzada de Tlalpan 890, Col. Portales',
+        city: 'Ciudad de México',
+        state: 'CDMX',
+        postalCode: '03300',
+        phone: '55-3456-7890',
+        email: 'sur@marvera.com',
+        latitude: 19.3675,
+        longitude: -99.1576,
+        openingHours: 'Lunes a Domingo: 8:30 AM - 7:30 PM',
+        services: 'Venta al menudeo, Preparación especializada, Productos orgánicos',
+        manager: 'Roberto Martínez',
+        description: 'Especialistas en mariscos frescos y productos orgánicos'
+      }
+    ];
+
+    branches.forEach(branch => {
+      this.db.run(
+        `INSERT OR IGNORE INTO branches 
+         (name, address, city, state, postalCode, phone, email, latitude, longitude, 
+          openingHours, services, manager, description) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [branch.name, branch.address, branch.city, branch.state, branch.postalCode,
+         branch.phone, branch.email, branch.latitude, branch.longitude,
+         branch.openingHours, branch.services, branch.manager, branch.description]
       );
     });
   }

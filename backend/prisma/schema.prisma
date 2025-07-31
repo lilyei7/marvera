@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Modelo de Usuario
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  firstName    String
+  lastName     String
+  password     String
+  phone        String?
+  role         UserRole @default(CUSTOMER)
+  businessName String?  // Para usuarios de restaurantes y mayoristas
+  businessType String?  // restaurant, wholesale, retail
+  taxId        String?  // RFC o tax ID para negocios
+  address      String?
+  city         String?
+  state        String?
+  postalCode   String?
+  isActive     Boolean  @default(true)
+  isVerified   Boolean  @default(false)
+  lastLogin    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    Int?     // ID del admin que creó este usuario
+
+  // Relaciones
+  orders          Order[]
+  wholesaleOrders WholesaleOrder[]
+  creator         User?  @relation("UserCreator", fields: [createdBy], references: [id])
+  createdUsers    User[] @relation("UserCreator")
+
+  @@map("users")
+}
+
+// Enum para roles de usuario
+enum UserRole {
+  SUPER_ADMIN    // Acceso total
+  ADMIN          // Administrador de sucursal
+  MANAGER        // Gerente de operaciones
+  EMPLOYEE       // Empleado
+  CUSTOMER       // Cliente final
+  RESTAURANT     // Cliente restaurante
+  WHOLESALE      // Cliente mayorista
+  DRIVER         // Conductor/repartidor
+}
+
+// Modelo de Categoría
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  products          Product[]
+  wholesaleProducts WholesaleProduct[]
+
+  @@map("categories")
+}
+
+// Modelo de Producto
+model Product {
+  id           Int      @id @default(autoincrement())
+  name         String
+  slug         String   @unique
+  description  String?
+  price        Float
+  comparePrice Float?
+  categoryId   Int
+  stock        Int      @default(0)
+  unit         String   @default("kg")
+  images       String?  // JSON string
+  isActive     Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+// Modelo de Producto de Mayoreo
+model WholesaleProduct {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?
+  pricePerBox  Float    // Precio por caja
+  unitsPerBox  Int      // Unidades por caja
+  unitType     String   @default("kg") // kg, piezas, docenas, etc.
+  categoryId   Int?
+  stock        Int      @default(0) // Stock en cajas
+  minimumOrder Int      @default(1) // Mínimo de cajas por pedido
+  images       String?  // JSON string
+  isActive     Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  category         Category?              @relation(fields: [categoryId], references: [id])
+  wholesaleOrderItems WholesaleOrderItem[]
+
+  @@map("wholesale_products")
+}
+
+// Modelo de Sucursal (sin campo gerente)
+model Branch {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  address      String?
+  city         String?
+  state        String?
+  postalCode   String?
+  phone        String?
+  email        String?
+  latitude     Float?
+  longitude    Float?
+  openingHours String?
+  services     String?
+  description  String?
+  image        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("branches")
+}
+
+// Modelo de Conductor
+model Driver {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String
+  license   String   @unique
+  vehicle   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  orders          Order[]
+  wholesaleOrders WholesaleOrder[]
+
+  @@map("drivers")
+}
+
+// Modelo de Pedido
+model Order {
+  id              Int      @id @default(autoincrement())
+  orderNumber     String   @unique
+  userId          Int
+  status          String   @default("pending") // pending, confirmed, preparing, in_transit, delivered, cancelled
+  subtotal        Float
+  shippingCost    Float    @default(0)
+  tax             Float    @default(0)
+  total           Float
+  paymentMethod   String?
+  paymentStatus   String   @default("pending") // pending, paid, failed, refunded
+  shippingAddress String?
+  deliveryDate    DateTime?
+  driverId        Int?
+  trackingCode    String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  user      User        @relation(fields: [userId], references: [id])
+  driver    Driver?     @relation(fields: [driverId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+// Modelo de Item de Pedido
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Float
+  total     Float
+
+  // Relaciones
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// Modelo de Pedido de Mayoreo
+model WholesaleOrder {
+  id              Int      @id @default(autoincrement())
+  orderNumber     String   @unique
+  userId          Int
+  status          String   @default("pending") // pending, confirmed, preparing, in_transit, delivered, cancelled
+  subtotal        Float
+  shippingCost    Float    @default(0)
+  tax             Float    @default(0)
+  total           Float
+  paymentMethod   String?
+  paymentStatus   String   @default("pending") // pending, paid, failed, refunded
+  shippingAddress String?
+  deliveryDate    DateTime?
+  driverId        Int?
+  trackingCode    String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  user               User                  @relation(fields: [userId], references: [id])
+  driver             Driver?               @relation(fields: [driverId], references: [id])
+  wholesaleOrderItems WholesaleOrderItem[]
+
+  @@map("wholesale_orders")
+}
+
+// Modelo de Item de Pedido de Mayoreo
+model WholesaleOrderItem {
+  id                 Int     @id @default(autoincrement())
+  wholesaleOrderId   Int
+  wholesaleProductId Int
+  quantity           Int     // Cantidad de cajas
+  pricePerBox        Float
+  total              Float
+
+  // Relaciones
+  wholesaleOrder   WholesaleOrder   @relation(fields: [wholesaleOrderId], references: [id], onDelete: Cascade)
+  wholesaleProduct WholesaleProduct @relation(fields: [wholesaleProductId], references: [id])
+
+  @@map("wholesale_order_items")
+}

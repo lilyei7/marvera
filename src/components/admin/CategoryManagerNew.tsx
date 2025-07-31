@@ -21,7 +21,7 @@ const CategoryManager: React.FC = () => {
     isActive: true
   });
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
 
   useEffect(() => {
     fetchCategories();
@@ -35,17 +35,8 @@ const CategoryManager: React.FC = () => {
       const data = await response.json();
       setCategories(data.categories || []);
     } catch (error) {
-      console.error('Error:', error);
-      // Datos de ejemplo para desarrollo
-      const mockCategories: Category[] = [
-        { id: 'pescados', name: 'Pescados', emoji: '🐟', description: 'Pescados frescos del océano', isActive: true, createdAt: '2024-01-01' },
-        { id: 'camarones', name: 'Camarones', emoji: '🦐', description: 'Camarones de diferentes tamaños', isActive: true, createdAt: '2024-01-02' },
-        { id: 'ostras', name: 'Ostras', emoji: '🦪', description: 'Ostras frescas y cultivadas', isActive: true, createdAt: '2024-01-03' },
-        { id: 'langostas', name: 'Langostas', emoji: '🦞', description: 'Langostas vivas y frescas', isActive: true, createdAt: '2024-01-04' },
-        { id: 'cangrejos', name: 'Cangrejos', emoji: '🦀', description: 'Cangrejos de diferentes especies', isActive: true, createdAt: '2024-01-05' },
-        { id: 'moluscos', name: 'Moluscos', emoji: '🐚', description: 'Variedad de moluscos marinos', isActive: false, createdAt: '2024-01-06' },
-      ];
-      setCategories(mockCategories);
+      console.error('Error al cargar categorías:', error);
+      setCategories([]);
     }
   };
 

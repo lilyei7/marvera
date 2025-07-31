@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AuthState, LoginRequest, RegisterRequest } from '../../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
 
 // Async thunks
 export const loginUser = createAsyncThunk(
@@ -24,9 +24,11 @@ export const loginUser = createAsyncThunk(
 
       // Guardar token en localStorage
       if (data.token) {
+        console.log('💾 Guardando token en localStorage:', data.token.substring(0, 20) + '...');
         localStorage.setItem('token', data.token);
       }
 
+      console.log('✅ Login exitoso, usuario:', data.user);
       return data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Error de conexión');
@@ -69,6 +71,7 @@ export const verifyToken = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
+      console.log('🔍 Verificando token:', token ? 'Token presente' : 'No hay token');
       
       if (!token) {
         return rejectWithValue('No hay token');
@@ -89,6 +92,7 @@ export const verifyToken = createAsyncThunk(
         };
       }
 
+      console.log('🌐 Enviando request a:', `${API_BASE_URL}/api/auth/verify`);
       const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: 'GET',
         headers: {
@@ -96,13 +100,17 @@ export const verifyToken = createAsyncThunk(
         },
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📦 Response data:', data);
 
       if (!response.ok) {
+        console.error('❌ Token verification failed:', data);
         localStorage.removeItem('token');
         return rejectWithValue(data.message || 'Token inválido');
       }
 
+      console.log('✅ Token verificado exitosamente');
       return data;
     } catch (error: any) {
       localStorage.removeItem('token');

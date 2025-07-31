@@ -32,22 +32,27 @@ const initialState: ProductsState = {
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async () => {
+  async (_, { rejectWithValue }) => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      // Añadir un pequeño retraso para evitar el error "Too Many Requests" (429)
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Solo intentar conectar si no es localhost development
-      if (API_BASE_URL === 'http://localhost:3001') {
-        console.log('🏠 Modo desarrollo - usando datos locales de productos');
-        return []; // Retornar array vacío para datos locales
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/products`, {
-        signal: AbortSignal.timeout(5000) // 5 segundos timeout
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+      const url = `${API_BASE_URL}/api/products`;
+      
+      console.log(`🔄 Conectando a la API: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        signal: AbortSignal.timeout(10000) // 10 segundos timeout
       });
       
       if (!response.ok) {
-        throw new Error('API no disponible');
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
       }
       
       const data = await response.json();
@@ -59,11 +64,11 @@ export const fetchProducts = createAsyncThunk(
         description: product.description,
         price: product.price,
         category: getCategorySlug(product.categoryName),
-        imageUrl: getProductImage(product),
+        imageUrl: product.image || (product.images && product.images.length > 0 ? product.images[0] : ''),
         inStock: product.stock > 0,
-        origin: 'MarVera',
-        freshness: 'Fresh',
-        weight: 1,
+        origin: product.origin || 'MarVera',
+        freshness: product.freshness || 'Fresh',
+        weight: product.weight || 1,
         unit: product.unit || 'kg',
         isFeatured: product.isFeatured === 1,
         images: product.images || [],
@@ -73,9 +78,8 @@ export const fetchProducts = createAsyncThunk(
       
       return products;
     } catch (error) {
-      // Silenciosamente usar datos locales
-      console.log('🏠 Modo desarrollo - usando datos locales de productos');
-      return [];
+      console.error('Error al cargar productos:', error);
+      return rejectWithValue('Error al cargar productos');
     }
   }
 );
@@ -93,32 +97,6 @@ function getCategorySlug(categoryName: string): ProductCategory {
   };
   
   return categoryMap[categoryName] || 'otros';
-}
-
-// Función helper para obtener imagen del producto
-function getProductImage(product: any): string {
-  // Si tiene imagen propia, usarla
-  if (product.image && product.image.trim() !== '') {
-    return product.image;
-  }
-  
-  // Si tiene imágenes múltiples, usar la primera
-  if (product.images && product.images.length > 0) {
-    return product.images[0];
-  }
-  
-  // Imagen por defecto basada en categoría
-  const categoryImages: { [key: string]: string } = {
-    'pescados': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop&crop=center',
-    'camarones': 'https://images.unsplash.com/photo-1553611892-7ba35ad6f0dd?w=400&h=300&fit=crop&crop=center',
-    'ostras': 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=300&fit=crop&crop=center',
-    'langostas': 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400&h=300&fit=crop&crop=center',
-    'cangrejos': 'https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop&crop=center',
-    'moluscos': 'https://images.unsplash.com/photo-1625943553852-781c6dd46faa?w=400&h=300&fit=crop&crop=center'
-  };
-  
-  const category = getCategorySlug(product.categoryName);
-  return categoryImages[category] || categoryImages['pescados'];
 }
 
 const productsSlice = createSlice({

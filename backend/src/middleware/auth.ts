@@ -10,7 +10,12 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+    console.log('🔐 Middleware auth - Headers:', req.headers);
+    console.log('🔐 Middleware auth - Auth header:', authHeader);
+    console.log('🔐 Middleware auth - Token recibido:', token ? `${token.substring(0, 20)}...` : 'No token');
+
     if (!token) {
+      console.log('🔐 No hay token en la request');
       return res.status(401).json({ 
         success: false, 
         message: 'Token de acceso requerido' 
@@ -18,8 +23,10 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
     }
 
     const decoded = AuthService.verifyToken(token);
+    console.log('🔐 Token decodificado:', decoded);
     
     if (!decoded) {
+      console.log('🔐 Token verification failed');
       return res.status(403).json({ 
         success: false, 
         message: 'Token inválido' 
@@ -28,8 +35,10 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
 
     // Obtener información completa del usuario
     const user = await AuthService.getUserById(decoded.userId);
+    console.log('🔐 Usuario obtenido:', user ? `Usuario ${user.id} encontrado` : 'Usuario no encontrado');
     
     if (!user || !user.isActive) {
+      console.log('🔐 Usuario inválido o inactivo:', { user: user?.id, isActive: user?.isActive });
       return res.status(403).json({ 
         success: false, 
         message: 'Usuario no válido o inactivo' 

@@ -6,6 +6,8 @@ import userReducer from './slices/userSlice';
 import authReducer from './slices/authSlice';
 import notificationReducer from './slices/notificationSlice';
 import featuredProductsReducer from './slices/featuredProductsSlice';
+import branchReducer from './slices/branchSlice';
+import { adminProductsApi } from '../services/adminProductsApi';
 
 export const store = configureStore({
   reducer: {
@@ -16,7 +18,11 @@ export const store = configureStore({
     auth: authReducer,
     notifications: notificationReducer,
     featuredProducts: featuredProductsReducer,
+    branches: branchReducer,
+    [adminProductsApi.reducerPath]: adminProductsApi.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(adminProductsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

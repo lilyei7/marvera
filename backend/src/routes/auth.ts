@@ -1,6 +1,6 @@
 import express from 'express';
 import { AuthService } from '../services/authService';
-import { authenticateToken } from '../middleware/auth';
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 

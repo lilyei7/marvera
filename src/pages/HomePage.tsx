@@ -6,7 +6,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { addNotification } from '../store/slices/notificationSlice';
 import { fetchFeaturedProducts } from '../store/slices/featuredProductsSlice';
 import type { FeaturedProduct } from '../store/slices/featuredProductsSlice';
-import OptimizedImage from '../components/common/OptimizedImage';
+import SimpleImage from '../components/common/SimpleImage';
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -20,7 +20,7 @@ const HomePage: React.FC = () => {
 
   // Debug: Log cuando cambien los productos destacados
   useEffect(() => {
-    if (featuredProducts.length > 0) {
+    if (featuredProducts && featuredProducts.length > 0) {
       console.log('✅ Productos destacados cargados:', featuredProducts);
       console.log('📊 Total productos destacados:', featuredProducts.length);
     }
@@ -120,96 +120,100 @@ const HomePage: React.FC = () => {
           
           {/* Vista mejorada - Cards con mejor espaciado y imágenes forzadas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
-            {featuredProducts.map((product: FeaturedProduct) => (
-              <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary/30 transform hover:-translate-y-1">
-                {/* Imagen Container con altura fija y mejor proporción */}
-                <div className="h-52 sm:h-56 md:h-60 lg:h-64 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-                  <OptimizedImage
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full"
-                    fallbackImage={`https://picsum.photos/400/300?random=${product.id}`}
-                    fallbackEmoji={product.emoji}
-                    priority={true}
-                  />
-                  
-                  {/* Tags overlay mejorados */}
-                  <div className="absolute top-4 left-4 z-10">
-                    <span className={`${product.tagColor} text-white px-3 py-2 rounded-full text-sm font-bold shadow-lg`}>
-                      {product.tag}
-                    </span>
-                  </div>
-                  
-                  <div className="absolute top-4 right-4 z-10">
-                    {product.inStock ? (
-                      <span className="bg-green-500 text-white text-sm px-3 py-2 rounded-full font-semibold shadow-lg">
-                        ✓ Disponible
+            {featuredProducts && Array.isArray(featuredProducts) && featuredProducts.length > 0 ? (
+              featuredProducts.map((product: FeaturedProduct) => (
+                <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-primary/30 transform hover:-translate-y-1">
+                  {/* Imagen Container con altura fija y mejor proporción */}
+                  <div className="h-52 sm:h-56 md:h-60 lg:h-64 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                    <SimpleImage
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full"
+                      fallbackEmoji={product.emoji}
+                      fallbackImage={`https://picsum.photos/400/300?random=${product.id}`}
+                    />
+                    
+                    {/* Tags overlay mejorados */}
+                    <div className="absolute top-4 left-4 z-10">
+                      <span className={`${product.tagColor} text-white px-3 py-2 rounded-full text-sm font-bold shadow-lg`}>
+                        {product.tag}
                       </span>
-                    ) : (
-                      <span className="bg-red-500 text-white text-sm px-3 py-2 rounded-full font-semibold shadow-lg">
-                        Agotado
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Contenido con mejor espaciado y estructura fija */}
-                <div className="p-5 sm:p-6 space-y-4">
-                  {/* Título con altura fija para alineación */}
-                  <div className="min-h-[3rem] flex items-start">
-                    <h3 className="font-bold text-gray-900 text-lg sm:text-xl line-clamp-2 leading-tight">
-                      {product.name}
-                    </h3>
-                  </div>
-                  
-                  {/* Descripción con altura fija */}
-                  <div className="min-h-[2.5rem]">
-                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                      {product.description}
-                    </p>
-                  </div>
-                  
-                  {/* Categoría con emoji */}
-                  <div className="flex items-center gap-2 py-1">
-                    <span className="text-xl">{product.emoji}</span>
-                    <span className="text-sm text-gray-500 font-medium capitalize">{product.category}</span>
-                  </div>
-                  
-                  {/* Precio con mejor diseño */}
-                  <div className="flex items-end justify-between py-3 border-t border-gray-100">
-                    <div>
-                      <div className="text-2xl sm:text-3xl font-bold text-primary">
-                        ${product.price.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-500 font-medium">
-                        por {product.unit}
-                      </div>
+                    </div>
+                    
+                    <div className="absolute top-4 right-4 z-10">
+                      {product.inStock ? (
+                        <span className="bg-green-500 text-white text-sm px-3 py-2 rounded-full font-semibold shadow-lg">
+                          ✓ Disponible
+                        </span>
+                      ) : (
+                        <span className="bg-red-500 text-white text-sm px-3 py-2 rounded-full font-semibold shadow-lg">
+                          Agotado
+                        </span>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Botón con mejor diseño */}
-                  <button 
-                    onClick={(e) => handleAddToCart(product, e)}
-                    disabled={!product.inStock}
-                    className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 text-base ${
-                      product.inStock
-                        ? 'bg-primary hover:bg-primary-dark text-white hover:shadow-lg transform hover:-translate-y-0.5'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {product.inStock ? '🛒 Agregar al carrito' : 'No disponible'}
-                  </button>
+                  {/* Contenido con mejor espaciado y estructura fija */}
+                  <div className="p-5 sm:p-6 space-y-4">
+                    {/* Título con altura fija para alineación */}
+                    <div className="min-h-[3rem] flex items-start">
+                      <h3 className="font-bold text-gray-900 text-lg sm:text-xl line-clamp-2 leading-tight">
+                        {product.name}
+                      </h3>
+                    </div>
+                    
+                    {/* Descripción con altura fija */}
+                    <div className="min-h-[2.5rem]">
+                      <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                        {product.description}
+                      </p>
+                    </div>
+                    
+                    {/* Categoría con emoji */}
+                    <div className="flex items-center gap-2 py-1">
+                      <span className="text-xl">{product.emoji}</span>
+                      <span className="text-sm text-gray-500 font-medium capitalize">{product.category}</span>
+                    </div>
+                    
+                    {/* Precio con mejor diseño */}
+                    <div className="flex items-end justify-between py-3 border-t border-gray-100">
+                      <div>
+                        <div className="text-2xl sm:text-3xl font-bold text-primary">
+                          ${product.price.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-gray-500 font-medium">
+                          por {product.unit}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Botón con mejor diseño */}
+                    <button 
+                      onClick={(e) => handleAddToCart(product, e)}
+                      disabled={!product.inStock}
+                      className={`w-full font-bold py-4 px-6 rounded-xl transition-all duration-300 text-base ${
+                        product.inStock
+                          ? 'bg-primary hover:bg-primary-dark text-white hover:shadow-lg transform hover:-translate-y-0.5'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {product.inStock ? '🛒 Agregar al carrito' : 'No disponible'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              // When there are no products to show
+              !loading && !error && (
+                <div className="col-span-3 text-center py-8">
+                  <p className="text-gray-500">No hay productos destacados disponibles</p>
+                </div>
+              )
+            )}
           </div>
           
           {/* Sin productos disponibles */}
-          {!loading && !error && featuredProducts.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No hay productos destacados disponibles</p>
-            </div>
-          )}
+          {/* Removed duplicate "no products" message as it's now handled in the grid */}
         </div>
       </section>
 

@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleCart } from '../store/slices/cartSlice';
 import { verifyToken, logoutUser } from '../store/slices/authSlice';
-import AuthModal from './AuthModal';
+import DevModeIndicator from './common/DevModeIndicator';
 
 const Navigation: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const cartState = useAppSelector((state: any) => state.cart);
   const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
   const itemCount = cartState?.itemCount || 0;
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     dispatch(verifyToken());
@@ -26,6 +27,19 @@ const Navigation: React.FC = () => {
   const handleLogout = () => {
     dispatch(logoutUser());
     setShowUserMenu(false);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      // Navegar a la página de productos con el término de búsqueda
+      navigate(`/productos?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm(''); // Limpiar el campo después de la búsqueda
+    }
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   return (
@@ -59,16 +73,18 @@ const Navigation: React.FC = () => {
 
             {/* Desktop Search Bar */}
             <div className="hidden md:flex flex-1 max-w-2xl mx-4 lg:mx-8">
-              <div className="relative w-full group">
+              <form onSubmit={handleSearch} className="relative w-full group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MagnifyingGlassIcon className="h-5 w-5 lg:h-6 lg:w-6 text-muted group-focus-within:text-primary transition-colors duration-200" />
                 </div>
                 <input
                   type="text"
+                  value={searchTerm}
+                  onChange={handleSearchInputChange}
                   placeholder="Buscar mariscos frescos..."
                   className="block w-full pl-10 lg:pl-12 pr-3 py-2.5 lg:py-3 text-base lg:text-lg border border-default rounded-lg leading-5 bg-background placeholder-muted focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 hover:border-accent hover:shadow-md text-main"
                 />
-              </div>
+              </form>
             </div>
 
             {/* Right Menu - Solo visible en desktop */}
@@ -123,17 +139,15 @@ const Navigation: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setIsAuthModalOpen(true)}
+                  <Link
+                    to="/login"
                     className="flex items-center space-x-1 text-main hover:text-primary px-3 sm:px-4 lg:px-5 py-2.5 lg:py-3 rounded-xl transition-all duration-300 group border-2 border-transparent hover:border-primary/30 hover:shadow-lg"
-                    disabled={isLoading}
                   >
                     <UserIcon className="h-6 w-6 lg:h-7 lg:w-7 transition-all duration-300 group-hover:scale-110 group-hover:text-primary" />
                     <span className="hidden xl:block font-semibold text-base text-gray-700 group-hover:text-primary">
-                      {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
+                      Iniciar Sesión
                     </span>
-                    {isLoading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>}
-                  </button>
+                  </Link>
                 )}
               </div>
 
@@ -178,8 +192,8 @@ const Navigation: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        <div className="md:hidden px-2 sm:px-4 pb-3">
+        {/* Mobile Search Bar - OCULTO */}
+        <div className="hidden">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <MagnifyingGlassIcon className="h-5 w-5 text-muted group-focus-within:text-primary transition-colors duration-200" />
@@ -203,16 +217,16 @@ const Navigation: React.FC = () => {
                 Comprar en línea
               </Link>
               <Link
-                to="/products?category=pescados-frescos"
-                className="text-base sm:text-lg text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline py-2"
-              >
-                Sucursales
-              </Link>
-              <Link
-                to="/products?category=mariscos"
+                to="/mayoreo"
                 className="text-base sm:text-lg text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline py-2"
               >
                 Mayoreo
+              </Link>
+              <Link
+                to="/sucursales"
+                className="text-base sm:text-lg text-gray-600 hover:text-primary font-medium whitespace-nowrap transition-colors duration-200 hover:underline py-2"
+              >
+                Sucursales
               </Link>
               <Link
                 to="/products?category=crustaceos"
@@ -234,7 +248,7 @@ const Navigation: React.FC = () => {
             className="mobile-bottom-nav-item flex flex-col items-center justify-center space-y-1 text-gray-600 hover:text-primary relative z-10"
           >
             <i className="mobile-nav-icon fas fa-store"></i>
-            <span className="text-xs font-medium">Tienda</span>
+            <span className="text-xs font-medium">Productos</span>
           </Link>
 
           {/* Sucursales */}
@@ -318,27 +332,19 @@ const Navigation: React.FC = () => {
               )}
             </div>
           ) : (
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
+            <Link
+              to="/login"
               className="mobile-bottom-nav-item flex flex-col items-center justify-center space-y-1 text-gray-600 hover:text-primary relative z-10"
-              disabled={isLoading}
             >
-              <i className={`mobile-nav-icon fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-key'}`}></i>
-              <span className="text-xs font-medium">
-                {isLoading ? 'Cargando...' : 'Login'}
-              </span>
-            </button>
+              <i className="mobile-nav-icon fas fa-key"></i>
+              <span className="text-xs font-medium">Login</span>
+            </Link>
           )}
         </div>
       </div>
 
-      {/* Auth Modal */}
-      {isAuthModalOpen && (
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-        />
-      )}
+      {/* Indicador de modo desarrollo */}
+      <DevModeIndicator />
     </>
   );
 };

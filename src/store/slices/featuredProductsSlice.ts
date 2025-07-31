@@ -21,7 +21,17 @@ interface FeaturedProductsState {
 }
 
 // Helper functions para categorías y emojis
-export const getEmojiForCategory = (category: string): string => {
+export const getEmojiForCategory = (category: any): string => {
+  // Si category es un objeto con name property, usar eso
+  let categoryName = '';
+  if (typeof category === 'object' && category !== null) {
+    categoryName = category.name || category.categoryName || '';
+  } else if (typeof category === 'string') {
+    categoryName = category;
+  } else {
+    categoryName = '';
+  }
+
   const categoryMap: Record<string, string> = {
     'pescados': '🐟',
     'mariscos': '🦐',
@@ -33,7 +43,7 @@ export const getEmojiForCategory = (category: string): string => {
     'especiales': '⭐',
     'temporada': '🌊'
   };
-  return categoryMap[category?.toLowerCase()] || '🐟';
+  return categoryMap[categoryName?.toLowerCase()] || '🐟';
 };
 
 export const getImageIdForCategory = (category: string): string => {
@@ -51,72 +61,135 @@ export const getImageIdForCategory = (category: string): string => {
   return imageMap[category?.toLowerCase()] || '1553611892-7ba35ad6f0dd';
 };
 
-// Datos de ejemplo para desarrollo local con URLs aún más confiables
-const SAMPLE_FEATURED_PRODUCTS: FeaturedProduct[] = [
+// Crear un arreglo de productos destacados de ejemplo (solo para fallback en caso de error)
+const exampleFeaturedProducts: FeaturedProduct[] = [
   {
     id: "1",
-    name: "Salmón Atlántico Premium",
-    description: "Salmón fresco del Atlántico, rico en omega-3 y de calidad premium para las mejores preparaciones.",
-    price: 89.99,
-    image: `https://cdn.pixabay.com/photo/2017/05/11/19/44/fresh-salmon-2305456_960_720.jpg`,
+    name: "Salmón Azul Premium",
+    description: "Salmón fresco de Alaska, corte premium",
+    price: 179.99,
+    image: "/products/salmon.jpg",
     category: "pescados",
     emoji: "🐟",
-    tag: "Destacado",
-    tagColor: "bg-blue-500",
+    tag: "Premium",
+    tagColor: "bg-amber-500",
     inStock: true,
     unit: "kg"
   },
   {
-    id: "2", 
+    id: "2",
     name: "Camarones Jumbo",
-    description: "Camarones jumbo frescos, perfectos para paellas y preparaciones gourmet. Tamaño extra grande.",
-    price: 125.50,
-    image: `https://cdn.pixabay.com/photo/2015/11/19/10/38/food-1050813_960_720.jpg`,
+    description: "Camarones grandes ideales para parrilla",
+    price: 249.99,
+    image: "/products/camarones.jpg",
     category: "mariscos",
     emoji: "🦐",
-    tag: "Popular",
-    tagColor: "bg-orange-500",
+    tag: "Fresco",
+    tagColor: "bg-green-500",
     inStock: true,
     unit: "kg"
   },
   {
     id: "3",
-    name: "Ostras Francesas",
-    description: "Ostras frescas importadas de Francia. Sabor intenso del mar y textura perfecta para degustar.",
-    price: 156.00,
-    image: `https://cdn.pixabay.com/photo/2018/04/17/13/42/oysters-3327835_960_720.jpg`,
-    category: "moluscos",
-    emoji: "🦪",
-    tag: "Premium",
-    tagColor: "bg-purple-500",
+    name: "Filete de Atún",
+    description: "Atún fresco cortado en filetes",
+    price: 199.99,
+    image: "/products/atun.jpg",
+    category: "pescados",
+    emoji: "🐟",
+    tag: "Popular",
+    tagColor: "bg-blue-500",
     inStock: true,
-    unit: "docena"
+    unit: "kg"
   }
 ];
 
-// Thunk simplificado - siempre usa datos locales con carga inmediata
+// Thunk para obtener productos destacados directamente de la base de datos
 export const fetchFeaturedProducts = createAsyncThunk(
   'featuredProducts/fetchFeaturedProducts',
-  async () => {
-    // Simular una pequeña demora SOLO para mostrar loading
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    console.log('🏠 Modo desarrollo local - usando datos de ejemplo');
-    
-    // Pre-cargar todas las imágenes
-    const imagePromises = SAMPLE_FEATURED_PRODUCTS.map(product => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(product);
-        img.onerror = () => resolve(product); // Continuar aunque falle
-        img.src = product.image;
+  async (_) => {
+    try {
+      // Conexión directa a la base de datos a través del endpoint de la API
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+      
+      // Log para debug
+      console.log(`🔍 Obteniendo productos destacados desde: ${API_BASE_URL}/api/products/featured`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/products/featured`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        signal: AbortSignal.timeout(10000) // 10 segundos timeout
       });
-    });
-    
-    // Esperar a que todas las imágenes se intenten cargar
-    await Promise.all(imagePromises);
-    
-    return SAMPLE_FEATURED_PRODUCTS;
+      
+      if (!response.ok) {
+        console.error(`❌ Error en la respuesta: ${response.status} - ${response.statusText}`);
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Datos recibidos de productos destacados:', data);
+      
+      // Make sure data is always an array and has all required properties
+      let processedData: FeaturedProduct[] = [];
+      
+      // Si data es un objeto con una propiedad products, usar data.products (común en APIs)
+      const productsArray = data.products || data;
+      
+      if (Array.isArray(productsArray) && productsArray.length > 0) {
+        console.log(`📊 Procesando ${productsArray.length} productos destacados`);
+        processedData = productsArray.map(product => ({
+          ...product,
+          // Ensure all required properties exist
+          id: product.id?.toString() || `temp-${Math.random().toString(36).substr(2, 9)}`,
+          name: product.name || 'Producto sin nombre',
+          description: product.description || 'Sin descripción disponible',
+          price: typeof product.price === 'number' ? product.price : 0,
+          image: product.image || '',
+          category: product.category?.name || product.categoryName || 'mariscos',
+          emoji: product.emoji || getEmojiForCategory(product.category?.name || product.categoryName || 'mariscos'),
+          tag: product.tag || 'Destacado',
+          tagColor: product.tagColor || 'bg-primary',
+          inStock: typeof product.inStock === 'boolean' ? product.inStock : product.stock > 0,
+          unit: product.unit || 'kg'
+        }));
+      } else {
+        console.warn('⚠️ No se encontraron productos destacados o el formato es incorrecto', data);
+        
+        // Si no hay productos destacados, usar productos de ejemplo como fallback
+        console.log('⚠️ Usando productos destacados de ejemplo como fallback');
+        return exampleFeaturedProducts;
+      }
+      
+      // Pre-cargar imágenes para mejorar UX
+      if (processedData.length > 0) {
+        const imagePromises = processedData.map((product: FeaturedProduct) => {
+          return new Promise((resolve) => {
+            if (product.image) {
+              const img = new Image();
+              img.onload = () => resolve(product);
+              img.onerror = () => resolve(product); // Continuar aunque falle
+              img.src = product.image;
+            } else {
+              resolve(product);
+            }
+          });
+        });
+        
+        // Esperar a que todas las imágenes se intenten cargar
+        await Promise.all(imagePromises);
+      }
+      
+      return processedData;
+    } catch (error) {
+      console.error('Error al cargar productos destacados:', error);
+      
+      // En caso de error, usar productos de ejemplo como fallback
+      console.log('⚠️ Error al cargar productos destacados, usando fallback');
+      return exampleFeaturedProducts;
+    }
   }
 );
 
@@ -138,14 +211,15 @@ const featuredProductsSlice = createSlice({
       })
       .addCase(fetchFeaturedProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        // Ensure action.payload is always an array
+        state.items = Array.isArray(action.payload) ? action.payload : [];
         state.error = null;
       })
       .addCase(fetchFeaturedProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al cargar productos destacados';
         // Usar datos de ejemplo como fallback
-        state.items = SAMPLE_FEATURED_PRODUCTS;
+        state.items = exampleFeaturedProducts;
       });
   },
 });

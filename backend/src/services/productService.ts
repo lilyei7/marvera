@@ -1,22 +1,16 @@
-import { dbManager } from '../database/database';
+import prisma from '../lib/prisma';
 import { Product, Category } from '../types';
 
 export class ProductService {
 
   static async getAllCategories(): Promise<Category[]> {
     try {
-      const db = dbManager.getDb();
-      
-      return new Promise<Category[]>((resolve, reject) => {
-        db.all(
-          'SELECT * FROM categories WHERE isActive = 1 ORDER BY name',
-          [],
-          (err, rows: Category[]) => {
-            if (err) reject(err);
-            else resolve(rows || []);
-          }
-        );
+      const categories = await prisma.category.findMany({
+        where: { isActive: true },
+        orderBy: { name: 'asc' }
       });
+      
+      return categories;
     } catch (error) {
       console.error('Error obteniendo categorías:', error);
       return [];
@@ -25,42 +19,38 @@ export class ProductService {
 
   static async getAllProducts(categoryId?: number, search?: string): Promise<Product[]> {
     try {
-      const db = dbManager.getDb();
+      const where: any = { isActive: true };
       
-      let query = `
-        SELECT p.*, c.name as categoryName 
-        FROM products p 
-        LEFT JOIN categories c ON p.category_id = c.id 
-        WHERE p.isActive = 1
-      `;
-      
-      const params: any[] = [];
-
       if (categoryId) {
-        query += ' AND p.category_id = ?';
-        params.push(categoryId);
+        where.categoryId = categoryId;
       }
 
       if (search) {
-        query += ' AND (p.name LIKE ? OR p.description LIKE ?)';
-        params.push(`%${search}%`, `%${search}%`);
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } }
+        ];
       }
 
-      query += ' ORDER BY p.isFeatured DESC, p.name';
-
-      return new Promise<Product[]>((resolve, reject) => {
-        db.all(query, params, (err, rows: Product[]) => {
-          if (err) reject(err);
-          else {
-            // Parsear images JSON si existe
-            const products = rows.map(product => ({
-              ...product,
-              images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
-            }));
-            resolve(products);
+      const products = await prisma.product.findMany({
+        where,
+        include: {
+          category: {
+            select: { name: true }
           }
-        });
+        },
+        orderBy: [
+          { isFeatured: 'desc' },
+          { name: 'asc' }
+        ]
       });
+
+      return products.map(product => ({
+        ...product,
+        categoryName: product.category?.name,
+        category_id: product.categoryId,
+        images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
+      }));
     } catch (error) {
       console.error('Error obteniendo productos:', error);
       return [];
@@ -69,29 +59,26 @@ export class ProductService {
 
   static async getFeaturedProducts(): Promise<Product[]> {
     try {
-      const db = dbManager.getDb();
-      
-      return new Promise<Product[]>((resolve, reject) => {
-        db.all(
-          `SELECT p.*, c.name as categoryName 
-           FROM products p 
-           LEFT JOIN categories c ON p.category_id = c.id 
-           WHERE p.isActive = 1 AND p.isFeatured = 1 
-           ORDER BY p.name 
-           LIMIT 6`,
-          [],
-          (err, rows: Product[]) => {
-            if (err) reject(err);
-            else {
-              const products = rows.map(product => ({
-                ...product,
-                images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
-              }));
-              resolve(products);
-            }
+      const products = await prisma.product.findMany({
+        where: {
+          isActive: true,
+          isFeatured: true
+        },
+        include: {
+          category: {
+            select: { name: true }
           }
-        );
+        },
+        orderBy: { name: 'asc' },
+        take: 6
       });
+
+      return products.map(product => ({
+        ...product,
+        categoryName: product.category?.name,
+        category_id: product.categoryId,
+        images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
+      }));
     } catch (error) {
       console.error('Error obteniendo productos destacados:', error);
       return [];
@@ -100,31 +87,28 @@ export class ProductService {
 
   static async getProductById(id: number): Promise<Product | null> {
     try {
-      const db = dbManager.getDb();
-      
-      return new Promise<Product | null>((resolve, reject) => {
-        db.get(
-          `SELECT p.*, c.name as categoryName 
-           FROM products p 
-           LEFT JOIN categories c ON p.category_id = c.id 
-           WHERE p.id = ? AND p.isActive = 1`,
-          [id],
-          (err, row: Product) => {
-            if (err) reject(err);
-            else {
-              if (row) {
-                const product = {
-                  ...row,
-                  images: typeof row.images === 'string' ? JSON.parse(row.images) : (row.images || [])
-                };
-                resolve(product);
-              } else {
-                resolve(null);
-              }
-            }
+      const product = await prisma.product.findFirst({
+        where: {
+          id: id,
+          isActive: true
+        },
+        include: {
+          category: {
+            select: { name: true }
           }
-        );
+        }
       });
+
+      if (product) {
+        return {
+          ...product,
+          categoryName: product.category?.name,
+          category_id: product.categoryId,
+          images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Error obteniendo producto:', error);
       return null;
@@ -133,31 +117,28 @@ export class ProductService {
 
   static async getProductBySlug(slug: string): Promise<Product | null> {
     try {
-      const db = dbManager.getDb();
-      
-      return new Promise<Product | null>((resolve, reject) => {
-        db.get(
-          `SELECT p.*, c.name as categoryName 
-           FROM products p 
-           LEFT JOIN categories c ON p.category_id = c.id 
-           WHERE p.slug = ? AND p.isActive = 1`,
-          [slug],
-          (err, row: Product) => {
-            if (err) reject(err);
-            else {
-              if (row) {
-                const product = {
-                  ...row,
-                  images: typeof row.images === 'string' ? JSON.parse(row.images) : (row.images || [])
-                };
-                resolve(product);
-              } else {
-                resolve(null);
-              }
-            }
+      const product = await prisma.product.findFirst({
+        where: {
+          slug: slug,
+          isActive: true
+        },
+        include: {
+          category: {
+            select: { name: true }
           }
-        );
+        }
       });
+
+      if (product) {
+        return {
+          ...product,
+          categoryName: product.category?.name,
+          category_id: product.categoryId,
+          images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Error obteniendo producto por slug:', error);
       return null;
@@ -166,34 +147,33 @@ export class ProductService {
 
   static async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product | null> {
     try {
-      const db = dbManager.getDb();
-      
-      const productId = await new Promise<number>((resolve, reject) => {
-        db.run(
-          `INSERT INTO products 
-           (name, slug, description, price, comparePrice, category_id, stock, unit, images, isActive, isFeatured) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            productData.name,
-            productData.slug,
-            productData.description,
-            productData.price,
-            productData.comparePrice,
-            productData.category_id,
-            productData.stock,
-            productData.unit,
-            JSON.stringify(Array.isArray(productData.images) ? productData.images : []),
-            productData.isActive ? 1 : 0,
-            productData.isFeatured ? 1 : 0
-          ],
-          function(err) {
-            if (err) reject(err);
-            else resolve(this.lastID);
+      const product = await prisma.product.create({
+        data: {
+          name: productData.name,
+          slug: productData.slug,
+          description: productData.description,
+          price: productData.price,
+          comparePrice: productData.comparePrice,
+          categoryId: productData.category_id,
+          stock: productData.stock,
+          unit: productData.unit,
+          images: JSON.stringify(Array.isArray(productData.images) ? productData.images : []),
+          isActive: productData.isActive,
+          isFeatured: productData.isFeatured
+        },
+        include: {
+          category: {
+            select: { name: true }
           }
-        );
+        }
       });
 
-      return await ProductService.getProductById(productId);
+      return {
+        ...product,
+        categoryName: product.category?.name,
+        category_id: product.categoryId,
+        images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
+      };
     } catch (error) {
       console.error('Error creando producto:', error);
       return null;
@@ -202,47 +182,32 @@ export class ProductService {
 
   static async updateProduct(id: number, productData: Partial<Product>): Promise<Product | null> {
     try {
-      const db = dbManager.getDb();
-      
-      const fields: string[] = [];
-      const values: any[] = [];
+      const updateData: any = {};
 
-      if (productData.name) {
-        fields.push('name = ?');
-        values.push(productData.name);
-      }
-      if (productData.description !== undefined) {
-        fields.push('description = ?');
-        values.push(productData.description);
-      }
-      if (productData.price !== undefined) {
-        fields.push('price = ?');
-        values.push(productData.price);
-      }
-      if (productData.stock !== undefined) {
-        fields.push('stock = ?');
-        values.push(productData.stock);
-      }
+      if (productData.name) updateData.name = productData.name;
+      if (productData.description !== undefined) updateData.description = productData.description;
+      if (productData.price !== undefined) updateData.price = productData.price;
+      if (productData.stock !== undefined) updateData.stock = productData.stock;
       if (productData.images !== undefined) {
-        fields.push('images = ?');
-        values.push(JSON.stringify(Array.isArray(productData.images) ? productData.images : []));
+        updateData.images = JSON.stringify(Array.isArray(productData.images) ? productData.images : []);
       }
 
-      fields.push('updatedAt = CURRENT_TIMESTAMP');
-      values.push(id);
-
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          `UPDATE products SET ${fields.join(', ')} WHERE id = ?`,
-          values,
-          (err) => {
-            if (err) reject(err);
-            else resolve();
+      const product = await prisma.product.update({
+        where: { id },
+        data: updateData,
+        include: {
+          category: {
+            select: { name: true }
           }
-        );
+        }
       });
 
-      return await ProductService.getProductById(id);
+      return {
+        ...product,
+        categoryName: product.category?.name,
+        category_id: product.categoryId,
+        images: typeof product.images === 'string' ? JSON.parse(product.images) : (product.images || [])
+      };
     } catch (error) {
       console.error('Error actualizando producto:', error);
       return null;
@@ -251,23 +216,15 @@ export class ProductService {
 
   static async deleteProduct(id: number): Promise<boolean> {
     try {
-      const db = dbManager.getDb();
-      
       // Verificar que el producto existe
       const product = await ProductService.getProductById(id);
       if (!product) {
         return false;
       }
 
-      await new Promise<void>((resolve, reject) => {
-        db.run(
-          'UPDATE products SET isActive = 0, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
-          [id],
-          (err) => {
-            if (err) reject(err);
-            else resolve();
-          }
-        );
+      await prisma.product.update({
+        where: { id },
+        data: { isActive: false }
       });
 
       return true;
