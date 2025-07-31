@@ -24,8 +24,8 @@ const io = new Server(server, {
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "http://187.33.155.127",
-      "http://187.33.155.127:8080"
+      "http://148.230.87.198",
+      "http://148.230.87.198:8080"
     ],
     methods: ["GET", "POST"]
   }
@@ -72,8 +72,8 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-    'http://187.33.155.127',
-    'http://187.33.155.127:8080'
+    'http://148.230.87.198',
+    'http://148.230.87.198:8080'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -196,7 +196,7 @@ app.use((req, res) => {
 server.listen(PORT, async () => {
   console.log(`🚀 Servidor MarVera corriendo en puerto ${PORT} en todas las interfaces`);
   console.log(`📊 API disponible en http://localhost:${PORT}/api`);
-  console.log(`🌐 API disponible externamente en http://187.33.155.127:${PORT}/api`);
+  console.log(`🌐 API disponible externamente en http://148.230.87.198:${PORT}/api`);
   console.log(`🔌 Socket.IO habilitado para tracking en tiempo real`);
   console.log(`💾 Prisma conectado a la base de datos SQLite`);
   

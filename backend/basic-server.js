@@ -23,7 +23,7 @@ const server = http.createServer((req, res) => {
       success: true,
       message: 'Servidor funcionando correctamente!',
       timestamp: new Date().toISOString(),
-      server: '187.33.155.127:3001'
+      server: '148.230.87.198:3001'
     }));
     return;
   }
@@ -74,8 +74,8 @@ const HOST = '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
   console.log(`✅ Servidor HTTP básico corriendo en http://${HOST}:${PORT}`);
-  console.log(`📍 Health check: http://187.33.155.127:${PORT}/api/health`);
-  console.log(`🐟 Productos: http://187.33.155.127:${PORT}/api/products/featured`);
+  console.log(`📍 Health check: http://148.230.87.198:${PORT}/api/health`);
+  console.log(`🐟 Productos: http://148.230.87.198:${PORT}/api/products/featured`);
 });
 
 server.on('error', (err) => {

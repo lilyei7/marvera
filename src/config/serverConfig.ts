@@ -1,7 +1,7 @@
 // Configuración del servidor para desarrollo
 export const SERVER_CONFIG = {
   // IP de tu servidor
-  SERVER_IP: '187.33.155.127',
+  SERVER_IP: '148.230.87.198',
   SERVER_PORT: '3001',
   
   // Modo de desarrollo - cambia esto según necesites

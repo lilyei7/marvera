@@ -3,7 +3,7 @@ const cors = require('cors');
 
 const app = express();
 const PORT = 3001;
-const SERVER_IP = '187.33.155.127';
+const SERVER_IP = '148.230.87.198';
 
 // Enhanced CORS
 app.use(cors({
