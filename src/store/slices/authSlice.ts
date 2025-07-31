@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AuthState, LoginRequest, RegisterRequest } from '../../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
 
 // Async thunks
 export const loginUser = createAsyncThunk(

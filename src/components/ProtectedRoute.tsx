@@ -19,13 +19,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   useEffect(() => {
     // Verificar token al cargar la ruta protegida
     const token = localStorage.getItem('token');
+    console.log('🛡️ ProtectedRoute - Token en localStorage:', token ? token.substring(0, 20) + '...' : 'null');
+    console.log('👤 Usuario actual:', user);
+    console.log('🔒 Require admin:', requireAdmin);
+    
     if (token && !user) {
+      console.log('🔄 Verificando token...');
       dispatch(verifyToken());
     }
   }, [dispatch, user]);
 
   // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
+    console.log('⏳ ProtectedRoute - Cargando...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -38,11 +44,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Si no está autenticado, redirigir al login
   if (!isAuthenticated || !user) {
+    console.log('❌ ProtectedRoute - No autenticado. isAuthenticated:', isAuthenticated, 'user:', user);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  console.log('✅ ProtectedRoute - Usuario autenticado:', user.email, 'Rol:', user.role);
+
   // Si requiere admin pero el usuario no es admin
-  if (requireAdmin && user.role !== 'admin') {
+  if (requireAdmin && !['admin', 'ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(user.role)) {
+    console.log('❌ Acceso denegado - Rol del usuario:', user.role);
+    console.log('🔑 Roles permitidos:', ['admin', 'ADMIN', 'SUPER_ADMIN', 'MANAGER']);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -51,6 +62,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
             <h2 className="text-2xl font-bold text-red-800 mb-2">Acceso Denegado</h2>
             <p className="text-red-600 mb-4">
               No tienes permisos para acceder a esta sección.
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Tu rol: {user.role} | Se requiere: Admin
             </p>
             <button
               onClick={() => window.history.back()}

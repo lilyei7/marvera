@@ -47,7 +47,7 @@ const WholesalePage: React.FC = () => {
   const fetchWholesaleProducts = async () => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+      const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
       const response = await fetch(`${API_BASE_URL}/api/wholesale-products`);
       
       if (!response.ok) {

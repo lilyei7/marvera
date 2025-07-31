@@ -219,70 +219,84 @@ router.post('/login', [
   }
 });
 
+// Función helper para verificar token
+const verifyUserToken = async (token) => {
+  if (!token) {
+    throw new Error('Token no proporcionado');
+  }
+
+  // Verificar token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+  
+  // Buscar usuario
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      role: true,
+      address: true,
+      city: true,
+      state: true,
+      isActive: true,
+      createdAt: true
+    }
+  });
+  
+  if (!user || !user.isActive) {
+    throw new Error('Token inválido');
+  }
+  
+  return user;
+};
+
+// @route   GET /api/auth/verify
+// @desc    Verificar token JWT (método GET)
+// @access  Private
+router.get('/verify', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    console.log('🔍 GET /verify - Token recibido:', token ? token.substring(0, 20) + '...' : 'null');
+    
+    const user = await verifyUserToken(token);
+    
+    console.log('✅ Token verificado para usuario:', user.email);
+    res.json({
+      success: true,
+      user: user
+    });
+  } catch (error) {
+    console.error('❌ Error en GET /verify:', error.message);
+    res.status(401).json({
+      success: false,
+      message: error.message || 'Token inválido'
+    });
+  }
+});
+
 // @route   POST /api/auth/verify
-// @desc    Verificar token JWT
+// @desc    Verificar token JWT (método POST)
 // @access  Private
 router.post('/verify', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    console.log('🔍 POST /verify - Token recibido:', token ? token.substring(0, 20) + '...' : 'null');
     
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token no proporcionado'
-      });
-    }
-
-    // Verificar token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const user = await verifyUserToken(token);
     
-    // Buscar usuario
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        address: true,
-        city: true,
-        state: true,
-        isActive: true,
-        createdAt: true
-      }
-    });
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token inválido'
-      });
-    }
-
-    const userResponse = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      address: user.address,
-      city: user.city,
-      createdAt: user.createdAt,
-      lastLogin: user.lastLogin
-    };
-
+    console.log('✅ Token verificado para usuario:', user.email);
     res.json({
       success: true,
-      user: userResponse
+      user: user
     });
-
   } catch (error) {
-    console.error('Error en verificación de token:', error);
+    console.error('❌ Error en POST /verify:', error.message);
     res.status(401).json({
       success: false,
-      message: 'Token inválido'
+      message: error.message || 'Token inválido'
     });
   }
 });

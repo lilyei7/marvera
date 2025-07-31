@@ -6,10 +6,11 @@
  */
 
 // URL Base del servidor API
-// En producción será el dominio real
-// En desarrollo, se lee de las variables de entorno o se usa localhost
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
-export const REMOTE_API_URL = import.meta.env.VITE_BACKEND_URL || 'https://marvera.mx';
+// En desarrollo: localhost:3001 (backend local)
+// En producción: https://marvera.mx
+const isDevelopment = import.meta.env.DEV;
+export const API_BASE_URL = isDevelopment ? 'http://localhost:3001' : 'https://marvera.mx';
+export const REMOTE_API_URL = 'https://marvera.mx';
 export const ENABLE_FALLBACK = import.meta.env.VITE_ENABLE_FALLBACK !== 'false';
 
 // Versión de la API
@@ -38,9 +39,7 @@ export const API_CONFIG = {
   // Headers comunes para todas las peticiones
   COMMON_HEADERS: {
     'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache',
-    'User-Agent': 'MarVera Frontend'
+    'Content-Type': 'application/json'
   },
   
   // Configuración de caché

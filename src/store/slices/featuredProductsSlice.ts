@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { API_ENDPOINTS, API_CONFIG, apiRequest } from '../../config/apiConfig';
+import { API_ENDPOINTS, API_CONFIG } from '../../config/apiConfig';
 
 export interface FeaturedProduct {
   id: string;
@@ -47,6 +47,7 @@ export const getEmojiForCategory = (category: any): string => {
   return categoryMap[categoryName?.toLowerCase()] || '🐟';
 };
 
+// Función para obtener imagen de categoría desde Unsplash
 export const getImageIdForCategory = (category: string): string => {
   const imageMap: Record<string, string> = {
     'pescados': '1565299624946-3fb11f5e6747', // Salmón fresco
@@ -61,49 +62,6 @@ export const getImageIdForCategory = (category: string): string => {
   };
   return imageMap[category?.toLowerCase()] || '1553611892-7ba35ad6f0dd';
 };
-
-// Crear un arreglo de productos destacados de ejemplo (solo para fallback en caso de error)
-const exampleFeaturedProducts: FeaturedProduct[] = [
-  {
-    id: "1",
-    name: "Salmón Azul Premium",
-    description: "Salmón fresco de Alaska, corte premium",
-    price: 179.99,
-    image: "./assets/products/salmon.webp",
-    category: "pescados",
-    emoji: "🐟",
-    tag: "Premium",
-    tagColor: "bg-amber-500",
-    inStock: true,
-    unit: "kg"
-  },
-  {
-    id: "2",
-    name: "Camarones Jumbo",
-    description: "Camarones grandes ideales para parrilla",
-    price: 249.99,
-    image: "./assets/products/camarones.webp",
-    category: "mariscos",
-    emoji: "🦐",
-    tag: "Fresco",
-    tagColor: "bg-green-500",
-    inStock: true,
-    unit: "kg"
-  },
-  {
-    id: "3",
-    name: "Filete de Atún",
-    description: "Atún fresco cortado en filetes",
-    price: 199.99,
-    image: "./assets/products/atun.webp",
-    category: "pescados",
-    emoji: "🐟",
-    tag: "Popular",
-    tagColor: "bg-blue-500",
-    inStock: true,
-    unit: "kg"
-  }
-];
 
 // Función para procesar los productos recibidos del servidor
 const processProducts = (productsArray: any[]): FeaturedProduct[] => {
@@ -147,8 +105,7 @@ export const fetchFeaturedProducts = createAsyncThunk(
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        console.warn(`⚠️ Servidor respondió con error: ${response.status}, usando fallback`);
-        return exampleFeaturedProducts;
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
@@ -161,15 +118,12 @@ export const fetchFeaturedProducts = createAsyncThunk(
         console.log(`📊 Procesando ${productsArray.length} productos del servidor`);
         return processProducts(productsArray);
       } else {
-        console.warn('⚠️ No se encontraron productos en el servidor, usando fallback');
-        return exampleFeaturedProducts;
+        throw new Error('No se encontraron productos en el servidor');
       }
       
     } catch (error) {
-      // Si hay cualquier error de conexión, usar productos de ejemplo
-      console.log('🔌 Sin conexión al servidor, usando datos locales de ejemplo');
-      console.log('📦 Mostrando productos destacados de fallback');
-      return exampleFeaturedProducts;
+      console.error('❌ Error al cargar productos:', error);
+      throw error;
     }
   }
 );
@@ -199,8 +153,7 @@ const featuredProductsSlice = createSlice({
       .addCase(fetchFeaturedProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al cargar productos destacados';
-        // Usar datos de ejemplo como fallback
-        state.items = exampleFeaturedProducts;
+        state.items = []; // No usar datos de ejemplo
       });
   },
 });
