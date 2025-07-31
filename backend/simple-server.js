@@ -24,7 +24,15 @@ connectDB();
 
 // Basic middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    'http://187.33.155.127:5173',
+    'http://187.33.155.127:5174',
+    'http://187.33.155.127',
+    `http://${process.env.SERVER_IP || '187.33.155.127'}:5173`,
+    `http://${process.env.SERVER_IP || '187.33.155.127'}:5174`
+  ],
   credentials: true
 }));
 
@@ -137,9 +145,10 @@ app.use('*', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 Simple test backend running on port', PORT);
-  console.log('📍 Health check: http://localhost:3001/api/health');
-  console.log('🐟 Featured products: http://localhost:3001/api/products/featured');
-  console.log('📦 All products: http://localhost:3001/api/products');
+  console.log('🌐 Server accessible from external IPs');
+  console.log('📍 Health check: http://187.33.155.127:3001/api/health');
+  console.log('🐟 Featured products: http://187.33.155.127:3001/api/products/featured');
+  console.log('📦 All products: http://187.33.155.127:3001/api/products');
 });
