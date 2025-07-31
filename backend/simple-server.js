@@ -38,6 +38,19 @@ app.use(cors({
 
 app.use(express.json());
 
+// Request timeout middleware
+app.use((req, res, next) => {
+  req.setTimeout(60000); // 60 seconds
+  res.setTimeout(60000);
+  next();
+});
+
+// Request logging
+app.use((req, res, next) => {
+  console.log(`📍 ${req.method} ${req.originalUrl} - ${new Date().toISOString()}`);
+  next();
+});
+
 // Import routes
 const authRoutes = require('./src/routes/api/auth');
 const userRoutes = require('./src/routes/api/user');

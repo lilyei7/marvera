@@ -115,14 +115,21 @@ export const fetchFeaturedProducts = createAsyncThunk(
       // Log para debug
       console.log(`🔍 Obteniendo productos destacados desde: ${API_BASE_URL}/api/products/featured`);
       
+      // Crear un AbortController para manejar timeout manualmente
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos
+      
       const response = await fetch(`${API_BASE_URL}/api/products/featured`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'User-Agent': 'MarVera Frontend'
         },
-        signal: AbortSignal.timeout(10000) // 10 segundos timeout
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         console.error(`❌ Error en la respuesta: ${response.status} - ${response.statusText}`);
@@ -135,8 +142,8 @@ export const fetchFeaturedProducts = createAsyncThunk(
       // Make sure data is always an array and has all required properties
       let processedData: FeaturedProduct[] = [];
       
-      // Si data es un objeto con una propiedad products, usar data.products (común en APIs)
-      const productsArray = data.products || data;
+      // Si data es un objeto con una propiedad data, usar data.data
+      const productsArray = data.data || data.products || data;
       
       if (Array.isArray(productsArray) && productsArray.length > 0) {
         console.log(`📊 Procesando ${productsArray.length} productos destacados`);
@@ -147,39 +154,18 @@ export const fetchFeaturedProducts = createAsyncThunk(
           name: product.name || 'Producto sin nombre',
           description: product.description || 'Sin descripción disponible',
           price: typeof product.price === 'number' ? product.price : 0,
-          image: product.image || '',
-          category: product.category?.name || product.categoryName || 'mariscos',
-          emoji: product.emoji || getEmojiForCategory(product.category?.name || product.categoryName || 'mariscos'),
+          image: product.imageUrl || product.image || '/products/default.jpg',
+          category: product.category?.name || product.categoryName || product.category || 'mariscos',
+          emoji: product.emoji || getEmojiForCategory(product.category?.name || product.categoryName || product.category || 'mariscos'),
           tag: product.tag || 'Destacado',
           tagColor: product.tagColor || 'bg-primary',
-          inStock: typeof product.inStock === 'boolean' ? product.inStock : product.stock > 0,
+          inStock: typeof product.inStock === 'boolean' ? product.inStock : (product.stock > 0),
           unit: product.unit || 'kg'
         }));
       } else {
         console.warn('⚠️ No se encontraron productos destacados o el formato es incorrecto', data);
-        
-        // Si no hay productos destacados, usar productos de ejemplo como fallback
-        console.log('⚠️ Usando productos destacados de ejemplo como fallback');
-        return exampleFeaturedProducts;
-      }
-      
-      // Pre-cargar imágenes para mejorar UX
-      if (processedData.length > 0) {
-        const imagePromises = processedData.map((product: FeaturedProduct) => {
-          return new Promise((resolve) => {
-            if (product.image) {
-              const img = new Image();
-              img.onload = () => resolve(product);
-              img.onerror = () => resolve(product); // Continuar aunque falle
-              img.src = product.image;
-            } else {
-              resolve(product);
-            }
-          });
-        });
-        
-        // Esperar a que todas las imágenes se intenten cargar
-        await Promise.all(imagePromises);
+        // Si la respuesta está vacía pero fue exitosa, usar fallback
+        throw new Error('No products found in response');
       }
       
       return processedData;
