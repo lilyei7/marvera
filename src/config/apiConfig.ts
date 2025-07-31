@@ -7,8 +7,10 @@
 
 // URL Base del servidor API
 // En producción será el dominio real
-// En desarrollo, se lee de las variables de entorno o se usa la IP de desarrollo
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://187.33.155.127:3001';
+// En desarrollo, se lee de las variables de entorno o se usa localhost
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
+export const REMOTE_API_URL = import.meta.env.VITE_BACKEND_URL || 'https://marvera.mx';
+export const ENABLE_FALLBACK = import.meta.env.VITE_ENABLE_FALLBACK !== 'false';
 
 // Versión de la API
 export const API_VERSION = 'v1';
@@ -31,7 +33,7 @@ export const API_ENDPOINTS = {
 // Configuración de la API
 export const API_CONFIG = {
   // Tiempo máximo de espera para peticiones (en ms)
-  TIMEOUT: 3000,
+  TIMEOUT: Number(import.meta.env.VITE_API_TIMEOUT) || 3000,
   
   // Headers comunes para todas las peticiones
   COMMON_HEADERS: {
