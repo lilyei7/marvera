@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { API_ENDPOINTS, API_CONFIG } from '../../config/apiConfig';
+import { API_ENDPOINTS, API_CONFIG, apiRequest } from '../../config/apiConfig';
 
 export interface FeaturedProduct {
   id: string;
@@ -105,69 +105,42 @@ const exampleFeaturedProducts: FeaturedProduct[] = [
   }
 ];
 
-// Importar configuración centralizada de API
-import { API_ENDPOINTS, API_CONFIG, apiRequest } from '../../config/apiConfig';
+// Función para procesar los productos recibidos del servidor
+const processProducts = (productsArray: any[]): FeaturedProduct[] => {
+  return productsArray.map(product => ({
+    ...product,
+    // Ensure all required properties exist
+    id: product.id?.toString() || `temp-${Math.random().toString(36).substr(2, 9)}`,
+    name: product.name || 'Producto sin nombre',
+    description: product.description || 'Sin descripción disponible',
+    price: typeof product.price === 'number' ? product.price : 0,
+    image: product.imageUrl || product.image || './assets/products/default.webp',
+    category: product.category?.name || product.categoryName || product.category || 'mariscos',
+    emoji: product.emoji || getEmojiForCategory(product.category?.name || product.categoryName || product.category || 'mariscos'),
+    tag: product.tag || 'Destacado',
+    tagColor: product.tagColor || 'bg-primary',
+    inStock: typeof product.inStock === 'boolean' ? product.inStock : (product.stock > 0),
+    unit: product.unit || 'kg'
+  }));
+};
 
 // Thunk para obtener productos destacados directamente de la base de datos
 export const fetchFeaturedProducts = createAsyncThunk(
   'featuredProducts/fetchFeaturedProducts',
   async (_) => {
-    // Si no hay servidor disponible, usar datos de ejemplo directamente
     try {
-      // Usar la función apiRequest para manejo automático de errores y timeout
-      const data = await apiRequest(
-        API_ENDPOINTS.FEATURED_PRODUCTS,
-        {
-          method: 'GET',
-          headers: API_CONFIG.COMMON_HEADERS
-        },
-        exampleFeaturedProducts // Datos fallback
-      );
+      console.log(`🔍 Intentando conectar al servidor: ${API_ENDPOINTS.FEATURED_PRODUCTS}`);
       
-      // Make sure data is always an array and has all required properties
-      let processedData: FeaturedProduct[] = [];
+      // Crear un AbortController para manejar timeout manualmente
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Timeout alcanzado, usando datos de fallback');
+        controller.abort();
+      }, API_CONFIG.TIMEOUT);
       
-      // Si data es un objeto con una propiedad data, usar data.data
-      const productsArray = data.data || data.products || data;
-      
-      if (Array.isArray(productsArray) && productsArray.length > 0) {
-        console.log(`� Procesando ${productsArray.length} productos del servidor`);
-        processedData = productsArray.map(product => ({
-          ...product,
-          // Ensure all required properties exist
-          id: product.id?.toString() || `temp-${Math.random().toString(36).substr(2, 9)}`,
-          name: product.name || 'Producto sin nombre',
-          description: product.description || 'Sin descripción disponible',
-          price: typeof product.price === 'number' ? product.price : 0,
-          image: product.imageUrl || product.image || './assets/products/default.webp',
-          category: product.category?.name || product.categoryName || product.category || 'mariscos',
-          emoji: product.emoji || getEmojiForCategory(product.category?.name || product.categoryName || product.category || 'mariscos'),
-          tag: product.tag || 'Destacado',
-          tagColor: product.tagColor || 'bg-primary',
-          inStock: typeof product.inStock === 'boolean' ? product.inStock : (product.stock > 0),
-          unit: product.unit || 'kg'
-        }));
-        return processedData;
-      } else {
-        console.warn('⚠️ No se encontraron productos en el servidor, usando fallback');
-        return exampleFeaturedProducts;
-      }
-    } catch (error) {
-      // Si hay cualquier error de conexión, usar productos de ejemplo
-      console.log('🔌 Error no controlado, usando datos locales de ejemplo');
-      console.log('📦 Mostrando productos destacados de fallback');
-      return exampleFeaturedProducts;
-    }
-  }
-);
-      
-      const response = await fetch(`${API_BASE_URL}/api/products/featured`, {
+      const response = await fetch(API_ENDPOINTS.FEATURED_PRODUCTS, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache',
-          'User-Agent': 'MarVera Frontend'
-        },
+        headers: API_CONFIG.COMMON_HEADERS,
         signal: controller.signal
       });
       
@@ -181,30 +154,12 @@ export const fetchFeaturedProducts = createAsyncThunk(
       const data = await response.json();
       console.log('✅ Datos recibidos del servidor:', data);
       
-      // Make sure data is always an array and has all required properties
-      let processedData: FeaturedProduct[] = [];
-      
-      // Si data es un objeto con una propiedad data, usar data.data
+      // Si data es un objeto con una propiedad data o products, usar eso
       const productsArray = data.data || data.products || data;
       
       if (Array.isArray(productsArray) && productsArray.length > 0) {
         console.log(`📊 Procesando ${productsArray.length} productos del servidor`);
-        processedData = productsArray.map(product => ({
-          ...product,
-          // Ensure all required properties exist
-          id: product.id?.toString() || `temp-${Math.random().toString(36).substr(2, 9)}`,
-          name: product.name || 'Producto sin nombre',
-          description: product.description || 'Sin descripción disponible',
-          price: typeof product.price === 'number' ? product.price : 0,
-          image: product.imageUrl || product.image || './assets/products/default.webp',
-          category: product.category?.name || product.categoryName || product.category || 'mariscos',
-          emoji: product.emoji || getEmojiForCategory(product.category?.name || product.categoryName || product.category || 'mariscos'),
-          tag: product.tag || 'Destacado',
-          tagColor: product.tagColor || 'bg-primary',
-          inStock: typeof product.inStock === 'boolean' ? product.inStock : (product.stock > 0),
-          unit: product.unit || 'kg'
-        }));
-        return processedData;
+        return processProducts(productsArray);
       } else {
         console.warn('⚠️ No se encontraron productos en el servidor, usando fallback');
         return exampleFeaturedProducts;
