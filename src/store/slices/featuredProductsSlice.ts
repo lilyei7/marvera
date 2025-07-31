@@ -108,16 +108,19 @@ const exampleFeaturedProducts: FeaturedProduct[] = [
 export const fetchFeaturedProducts = createAsyncThunk(
   'featuredProducts/fetchFeaturedProducts',
   async (_) => {
+    // Si no hay servidor disponible, usar datos de ejemplo directamente
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://187.33.155.127:3001';
+    
     try {
-      // Conexión directa a la base de datos a través del endpoint de la API
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
-      
       // Log para debug
-      console.log(`🔍 Obteniendo productos destacados desde: ${API_BASE_URL}/api/products/featured`);
+      console.log(`🔍 Intentando conectar al servidor: ${API_BASE_URL}/api/products/featured`);
       
       // Crear un AbortController para manejar timeout manualmente
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Timeout alcanzado, usando datos de fallback');
+        controller.abort();
+      }, 3000); // Reducido a 3 segundos
       
       const response = await fetch(`${API_BASE_URL}/api/products/featured`, {
         method: 'GET',
@@ -132,12 +135,12 @@ export const fetchFeaturedProducts = createAsyncThunk(
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        console.error(`❌ Error en la respuesta: ${response.status} - ${response.statusText}`);
-        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        console.warn(`⚠️ Servidor respondió con error: ${response.status}, usando fallback`);
+        return exampleFeaturedProducts;
       }
       
       const data = await response.json();
-      console.log('✅ Datos recibidos de productos destacados:', data);
+      console.log('✅ Datos recibidos del servidor:', data);
       
       // Make sure data is always an array and has all required properties
       let processedData: FeaturedProduct[] = [];
@@ -146,7 +149,7 @@ export const fetchFeaturedProducts = createAsyncThunk(
       const productsArray = data.data || data.products || data;
       
       if (Array.isArray(productsArray) && productsArray.length > 0) {
-        console.log(`📊 Procesando ${productsArray.length} productos destacados`);
+        console.log(`📊 Procesando ${productsArray.length} productos del servidor`);
         processedData = productsArray.map(product => ({
           ...product,
           // Ensure all required properties exist
@@ -162,18 +165,16 @@ export const fetchFeaturedProducts = createAsyncThunk(
           inStock: typeof product.inStock === 'boolean' ? product.inStock : (product.stock > 0),
           unit: product.unit || 'kg'
         }));
+        return processedData;
       } else {
-        console.warn('⚠️ No se encontraron productos destacados o el formato es incorrecto', data);
-        // Si la respuesta está vacía pero fue exitosa, usar fallback
-        throw new Error('No products found in response');
+        console.warn('⚠️ No se encontraron productos en el servidor, usando fallback');
+        return exampleFeaturedProducts;
       }
       
-      return processedData;
     } catch (error) {
-      console.error('Error al cargar productos destacados:', error);
-      
-      // En caso de error, usar productos de ejemplo como fallback
-      console.log('⚠️ Error al cargar productos destacados, usando fallback');
+      // Si hay cualquier error de conexión, usar productos de ejemplo
+      console.log('🔌 Sin conexión al servidor, usando datos locales de ejemplo');
+      console.log('📦 Mostrando productos destacados de fallback');
       return exampleFeaturedProducts;
     }
   }
