@@ -4,9 +4,9 @@ export interface User {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
-  address?: string;
-  role: 'customer' | 'admin' | 'driver';
+  phone?: string | null;
+  address?: string | null;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'CUSTOMER' | 'RESTAURANT' | 'WHOLESALE' | 'DRIVER';
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -16,7 +16,7 @@ export interface Category {
   id?: number;
   name: string;
   slug: string;
-  description?: string;
+  description?: string | null;
   image?: string;
   isActive: boolean;
   createdAt?: Date;
@@ -26,9 +26,9 @@ export interface Product {
   id?: number;
   name: string;
   slug: string;
-  description?: string;
+  description?: string | null;
   price: number;
-  comparePrice?: number;
+  comparePrice?: number | null;
   category_id: number;
   categoryName?: string;
   stock: number;

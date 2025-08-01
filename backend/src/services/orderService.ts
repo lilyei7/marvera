@@ -1,6 +1,47 @@
 import prisma from '../lib/prisma';
 import { Order, OrderItem } from '../types';
 
+type OrderWithRelations = {
+  id: number;
+  orderNumber: string;
+  userId: number;
+  status: string;
+  subtotal: number;
+  shippingCost: number;
+  tax: number;
+  total: number;
+  paymentMethod: string | null;
+  paymentStatus: string;
+  shippingAddress: string | null;
+  deliveryDate: Date | null;
+  driverId: number | null;
+  trackingCode: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  driver?: {
+    firstName: string;
+    lastName: string;
+  } | null;
+  orderItems?: {
+    id: number;
+    orderId: number;
+    productId: number;
+    quantity: number;
+    price: number;
+    total: number;
+    product?: {
+      name: string;
+      unit: string;
+    };
+  }[];
+};
+
 export class OrderService {
 
   static async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>): Promise<Order | null> {
@@ -17,15 +58,16 @@ export class OrderService {
           shippingCost: orderData.shippingCost || 0,
           tax: orderData.tax || 0,
           total: orderData.total,
-          paymentMethod: orderData.paymentMethod,
+          paymentMethod: orderData.paymentMethod || null,
           paymentStatus: orderData.paymentStatus || 'pending',
-          shippingAddress: orderData.shippingAddress,
-          notes: orderData.notes,
-          items: orderData.items ? {
+          shippingAddress: orderData.shippingAddress || null,
+          notes: orderData.notes || null,
+          orderItems: orderData.items ? {
             create: orderData.items.map(item => ({
               productId: item.product_id,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
+              total: item.price * item.quantity
             }))
           } : undefined
         },
@@ -43,7 +85,7 @@ export class OrderService {
               lastName: true
             }
           },
-          items: {
+          orderItems: {
             include: {
               product: {
                 select: {
@@ -54,24 +96,34 @@ export class OrderService {
             }
           }
         }
-      });
+      }) as OrderWithRelations;
 
       return {
-        ...order,
+        id: order.id,
+        orderNumber: order.orderNumber,
         user_id: order.userId,
-        driver_id: order.driverId,
-        firstName: order.user?.firstName,
-        lastName: order.user?.lastName,
-        email: order.user?.email,
-        driverFirstName: order.driver?.firstName,
-        driverLastName: order.driver?.lastName,
-        items: order.items.map(item => ({
-          ...item,
+        status: order.status as 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled',
+        subtotal: order.subtotal,
+        shippingCost: order.shippingCost,
+        tax: order.tax,
+        total: order.total,
+        paymentMethod: order.paymentMethod || undefined,
+        paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed' | 'refunded',
+        shippingAddress: order.shippingAddress || undefined,
+        deliveryDate: order.deliveryDate || undefined,
+        driver_id: order.driverId || undefined,
+        trackingCode: order.trackingCode || undefined,
+        notes: order.notes || undefined,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: order.orderItems?.map(item => ({
+          id: item.id,
           product_id: item.productId,
           order_id: item.orderId,
           productName: item.product?.name,
-          unit: item.product?.unit
-        }))
+          quantity: item.quantity,
+          price: item.price
+        })) || []
       };
     } catch (error) {
       console.error('Error creando orden:', error);
@@ -97,7 +149,7 @@ export class OrderService {
               lastName: true
             }
           },
-          items: {
+          orderItems: {
             include: {
               product: {
                 select: {
@@ -113,21 +165,31 @@ export class OrderService {
       if (!order) return null;
 
       return {
-        ...order,
+        id: order.id,
+        orderNumber: order.orderNumber,
         user_id: order.userId,
-        driver_id: order.driverId,
-        firstName: order.user?.firstName,
-        lastName: order.user?.lastName,
-        email: order.user?.email,
-        driverFirstName: order.driver?.firstName,
-        driverLastName: order.driver?.lastName,
-        items: order.items.map(item => ({
-          ...item,
+        status: order.status as 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled',
+        subtotal: order.subtotal,
+        shippingCost: order.shippingCost,
+        tax: order.tax,
+        total: order.total,
+        paymentMethod: order.paymentMethod || undefined,
+        paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed' | 'refunded',
+        shippingAddress: order.shippingAddress || undefined,
+        deliveryDate: order.deliveryDate || undefined,
+        driver_id: order.driverId || undefined,
+        trackingCode: order.trackingCode || undefined,
+        notes: order.notes || undefined,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: order.orderItems?.map(item => ({
+          id: item.id,
           product_id: item.productId,
           order_id: item.orderId,
           productName: item.product?.name,
-          unit: item.product?.unit
-        }))
+          quantity: item.quantity,
+          price: item.price
+        })) || []
       };
     } catch (error) {
       console.error('Error obteniendo orden:', error);
@@ -146,7 +208,7 @@ export class OrderService {
               lastName: true
             }
           },
-          items: {
+          orderItems: {
             include: {
               product: {
                 select: {
@@ -158,21 +220,34 @@ export class OrderService {
           }
         },
         orderBy: { createdAt: 'desc' }
-      });
+      }) as OrderWithRelations[];
 
       return orders.map(order => ({
-        ...order,
+        id: order.id,
+        orderNumber: order.orderNumber,
         user_id: order.userId,
-        driver_id: order.driverId,
-        driverFirstName: order.driver?.firstName,
-        driverLastName: order.driver?.lastName,
-        items: order.items.map(item => ({
-          ...item,
+        status: order.status as 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled',
+        subtotal: order.subtotal,
+        shippingCost: order.shippingCost,
+        tax: order.tax,
+        total: order.total,
+        paymentMethod: order.paymentMethod || undefined,
+        paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed' | 'refunded',
+        shippingAddress: order.shippingAddress || undefined,
+        deliveryDate: order.deliveryDate || undefined,
+        driver_id: order.driverId || undefined,
+        trackingCode: order.trackingCode || undefined,
+        notes: order.notes || undefined,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: order.orderItems?.map(item => ({
+          id: item.id,
           product_id: item.productId,
           order_id: item.orderId,
           productName: item.product?.name,
-          unit: item.product?.unit
-        }))
+          quantity: item.quantity,
+          price: item.price
+        })) || []
       }));
     } catch (error) {
       console.error('Error obteniendo órdenes del usuario:', error);
@@ -197,7 +272,7 @@ export class OrderService {
               lastName: true
             }
           },
-          items: {
+          orderItems: {
             include: {
               product: {
                 select: {
@@ -209,24 +284,34 @@ export class OrderService {
           }
         },
         orderBy: { createdAt: 'desc' }
-      });
+      }) as OrderWithRelations[];
 
       return orders.map(order => ({
-        ...order,
+        id: order.id,
+        orderNumber: order.orderNumber,
         user_id: order.userId,
-        driver_id: order.driverId,
-        firstName: order.user?.firstName,
-        lastName: order.user?.lastName,
-        email: order.user?.email,
-        driverFirstName: order.driver?.firstName,
-        driverLastName: order.driver?.lastName,
-        items: order.items.map(item => ({
-          ...item,
+        status: order.status as 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled',
+        subtotal: order.subtotal,
+        shippingCost: order.shippingCost,
+        tax: order.tax,
+        total: order.total,
+        paymentMethod: order.paymentMethod || undefined,
+        paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed' | 'refunded',
+        shippingAddress: order.shippingAddress || undefined,
+        deliveryDate: order.deliveryDate || undefined,
+        driver_id: order.driverId || undefined,
+        trackingCode: order.trackingCode || undefined,
+        notes: order.notes || undefined,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        items: order.orderItems?.map(item => ({
+          id: item.id,
           product_id: item.productId,
           order_id: item.orderId,
           productName: item.product?.name,
-          unit: item.product?.unit
-        }))
+          quantity: item.quantity,
+          price: item.price
+        })) || []
       }));
     } catch (error) {
       console.error('Error obteniendo todas las órdenes:', error);

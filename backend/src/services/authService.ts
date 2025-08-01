@@ -34,7 +34,7 @@ export class AuthService {
           lastName: userData.lastName,
           phone: userData.phone || null,
           address: userData.address || null,
-          role: 'customer'
+          role: 'CUSTOMER'
         },
         select: {
           id: true,
@@ -169,7 +169,7 @@ export class AuthService {
       const existingAdmin = await prisma.user.findFirst({
         where: {
           email: 'admin',
-          role: 'admin'
+          role: 'ADMIN'
         }
       });
 
@@ -188,7 +188,7 @@ export class AuthService {
           password: hashedPassword,
           firstName: 'Administrador',
           lastName: 'MarVera',
-          role: 'admin',
+          role: 'ADMIN',
           isActive: true
         }
       });
