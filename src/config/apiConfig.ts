@@ -55,7 +55,7 @@ export const API_CONFIG = {
 export const DEV_SERVER_OPTIONS = {
   PORT: 3001,
   HOST: '0.0.0.0',
-  CORS_ORIGIN: ['http://localhost:5173', 'https://marvera.com'],
+  CORS_ORIGIN: ['https://marvera.mx', 'https://marvera.com'],
 };
 
 // Opciones para el servidor en producción
@@ -170,3 +170,4 @@ export default {
   checkServerHealth,
   apiRequest
 };
+

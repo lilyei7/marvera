@@ -49,7 +49,7 @@ const ProductsManager: React.FC = () => {
     isFeatured: false
   });
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
   useEffect(() => {
     fetchProducts();
@@ -500,3 +500,4 @@ const ProductsManager: React.FC = () => {
 };
 
 export default ProductsManager;
+

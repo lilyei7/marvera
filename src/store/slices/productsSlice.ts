@@ -37,7 +37,7 @@ export const fetchProducts = createAsyncThunk(
       // Añadir un pequeño retraso para evitar el error "Too Many Requests" (429)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+      const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
       const url = `${API_BASE_URL}/api/products`;
       
       console.log(`🔄 Conectando a la API: ${url}`);
@@ -190,3 +190,4 @@ export const {
 } = productsSlice.actions;
 
 export default productsSlice.reducer;
+

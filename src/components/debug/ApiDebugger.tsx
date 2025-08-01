@@ -20,7 +20,7 @@ const ApiDebugger: React.FC = () => {
   }, []);
 
   const testApiConnections = async () => {
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
     const errors: string[] = [];
 
     // Test products endpoint
@@ -94,7 +94,7 @@ const ApiDebugger: React.FC = () => {
         <div className="flex items-center justify-between">
           <span>API Base URL:</span>
           <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-            {import.meta.env.VITE_API_URL || 'http://localhost:3001'}
+            {import.meta.env.VITE_API_URL || 'https://marvera.mx'}
           </code>
         </div>
         
@@ -135,3 +135,4 @@ const ApiDebugger: React.FC = () => {
 };
 
 export default ApiDebugger;
+

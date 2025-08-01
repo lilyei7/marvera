@@ -21,7 +21,7 @@ const CategoryManager: React.FC = () => {
     isActive: true
   });
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
   useEffect(() => {
     fetchCategories();
@@ -330,3 +330,4 @@ const CategoryManager: React.FC = () => {
 };
 
 export default CategoryManager;
+

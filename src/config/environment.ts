@@ -2,11 +2,11 @@
 const isDevelopment = import.meta.env.DEV || process.env.NODE_ENV === 'development';
 
 export const API_BASE_URL = isDevelopment 
-  ? 'http://localhost:3001' 
+  ? 'https://marvera.mx' 
   : 'https://marvera.mx';
 
 export const FRONTEND_URL = isDevelopment 
-  ? 'http://localhost:5174' 
+  ? 'http://marvera.mx' 
   : 'https://marvera.mx';
 
 // Export environment info
@@ -16,3 +16,5 @@ export const ENVIRONMENT = {
   API_BASE_URL,
   FRONTEND_URL
 };
+
+

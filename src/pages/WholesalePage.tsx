@@ -47,7 +47,7 @@ const WholesalePage: React.FC = () => {
   const fetchWholesaleProducts = async () => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+      const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
       const response = await fetch(`${API_BASE_URL}/api/wholesale-products`);
       
       if (!response.ok) {
@@ -475,3 +475,4 @@ const WholesalePage: React.FC = () => {
 };
 
 export default WholesalePage;
+

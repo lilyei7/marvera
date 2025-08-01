@@ -21,7 +21,7 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
   // Emojis marinos populares para productos
   const marineEmojis = [
@@ -279,3 +279,4 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
 };
 
 export default MultiImageUploader;
+

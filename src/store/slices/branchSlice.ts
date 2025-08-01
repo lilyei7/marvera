@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
 
 
 export interface Branch {
@@ -229,3 +229,4 @@ const branchSlice = createSlice({
 export const { clearError } = branchSlice.actions;
 export default branchSlice.reducer;
 export type { BranchState };
+

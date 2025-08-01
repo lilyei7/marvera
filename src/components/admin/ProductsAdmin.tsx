@@ -22,7 +22,7 @@ const ProductsAdmin: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
   const categories: (ProductCategory | 'all')[] = ['all', 'pescados', 'camarones', 'ostras', 'langostas', 'cangrejos', 'moluscos', 'otros'];
 
@@ -386,7 +386,7 @@ const ProductsAdmin: React.FC = () => {
                         <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
                           {product.imageUrl ? (
                             <img
-                              src={`http://localhost:3001${product.imageUrl}`}
+                              src={`https://marvera.mx${product.imageUrl}`}
                               alt={product.name}
                               className="h-full w-full object-cover"
                             />
@@ -470,3 +470,5 @@ const ProductsAdmin: React.FC = () => {
 };
 
 export default ProductsAdmin;
+
+

@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('https://marvera.mx/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,3 +204,4 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
+

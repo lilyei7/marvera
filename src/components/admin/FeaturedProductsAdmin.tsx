@@ -25,7 +25,7 @@ const FeaturedProductsAdmin: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
       const response = await fetch(`${API_BASE_URL}/api/products`);
       
       if (!response.ok) {
@@ -69,7 +69,7 @@ const FeaturedProductsAdmin: React.FC = () => {
       );
 
       // TODO: Llamada a la API para actualizar en la base de datos
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
       const response = await fetch(`${API_BASE_URL}/api/products/${productId}/featured`, {
         method: 'PATCH',
         headers: {
@@ -234,3 +234,4 @@ const FeaturedProductsAdmin: React.FC = () => {
 };
 
 export default FeaturedProductsAdmin;
+

@@ -15,7 +15,7 @@ import ProductImageViewer from './ProductImageViewer';
 import { ToastContainer, useToast } from './Toast';
 
 // API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
 const AdminPanel: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -693,3 +693,4 @@ const AdminPanel: React.FC = () => {
 };
 
 export default AdminPanel;
+

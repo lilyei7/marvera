@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
 
 import type { AuthState, LoginRequest, RegisterRequest } from '../../types';
 
@@ -237,3 +237,4 @@ const authSlice = createSlice({
 
 export const { clearError, clearAuth } = authSlice.actions;
 export default authSlice.reducer;
+

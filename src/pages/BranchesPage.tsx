@@ -40,7 +40,7 @@ const BranchesPage: React.FC = () => {
       console.log('🔄 Cargando sucursales desde la base de datos...');
       
       // Usar la URL completa del backend
-      const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+      const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
       const response = await fetch(`${API_BASE_URL}/api/branches/public`);
       
       console.log('📡 Response status:', response.status);
@@ -311,3 +311,4 @@ const BranchesPage: React.FC = () => {
 };
 
 export default BranchesPage;
+

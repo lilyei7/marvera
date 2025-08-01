@@ -66,7 +66,7 @@ const WholesaleManager: React.FC = () => {
     return '0.00';
   };
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
   useEffect(() => {
     fetchWholesaleProducts();
@@ -596,3 +596,4 @@ const WholesaleManager: React.FC = () => {
 };
 
 export default WholesaleManager;
+
