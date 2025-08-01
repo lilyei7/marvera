@@ -8,7 +8,6 @@ import {
   ClockIcon,
   ShoppingBagIcon,
   HeartIcon,
-  CogIcon,
   ArrowRightOnRectangleIcon,
   PencilIcon,
   CheckIcon,

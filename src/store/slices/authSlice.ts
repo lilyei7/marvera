@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { AuthState, LoginRequest, RegisterRequest } from '../../types';
-
 const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+
+import type { AuthState, LoginRequest, RegisterRequest } from '../../types';
 
 // Async thunks
 export const loginUser = createAsyncThunk(

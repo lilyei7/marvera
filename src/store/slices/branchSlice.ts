@@ -1,4 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'https://marvera.mx';
+
 
 export interface Branch {
   id: number;
@@ -18,8 +20,6 @@ interface BranchState {
   loading: boolean;
   error: string | null;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173';
 
 // Async thunks
 export const fetchBranches = createAsyncThunk(

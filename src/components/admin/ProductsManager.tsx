@@ -4,8 +4,7 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
-  EyeIcon,
-  PhotoIcon
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import OptimizedImage from '../common/OptimizedImage';
 
@@ -33,7 +32,6 @@ const ProductsManager: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,10 +64,10 @@ const ProductsManager: React.FC = () => {
       
       const data = await response.json();
       setProducts(data.products || []);
-      setError(null);
+
     } catch (error) {
       console.error('Error al cargar productos:', error);
-      setError('Error al cargar productos de la base de datos');
+
       setProducts([]);
     } finally {
       setLoading(false);

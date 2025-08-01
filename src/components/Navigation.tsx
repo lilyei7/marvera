@@ -10,7 +10,7 @@ const Navigation: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const cartState = useAppSelector((state: any) => state.cart);
-  const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const itemCount = cartState?.itemCount || 0;
 
   const [showUserMenu, setShowUserMenu] = useState(false);

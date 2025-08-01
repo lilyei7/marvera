@@ -3,8 +3,7 @@ import {
   MapPinIcon, 
   PhoneIcon, 
   ClockIcon, 
-  EnvelopeIcon,
-  UserIcon
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 
 interface Branch {

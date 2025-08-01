@@ -209,6 +209,11 @@ sudo cp -r backend/prisma /var/www/marvera.mx/backend/ 2>/dev/null || echo "No P
 
 # Copiar base de datos (si existe)
 sudo cp backend/database.sqlite /var/www/marvera.mx/backend/ 2>/dev/null || echo "No database file"
+
+# NUEVO: Crear directorio de imágenes y copiar assets
+sudo mkdir -p /var/www/marvera.mx/images
+sudo cp -r public/images/* /var/www/marvera.mx/images/ 2>/dev/null || echo "No images found"
+sudo cp -r src/assets/images/* /var/www/marvera.mx/images/ 2>/dev/null || echo "No src images found"
 ```
 
 #### 6.3 Verificar archivos copiados
@@ -295,6 +300,35 @@ pm2 logs  # Ver logs en tiempo real (Ctrl+C para salir)
 pm2 save
 pm2 startup
 ```
+
+#### 8.3 SOLUCIÓN RÁPIDA: Error de schema de base de datos
+Si ves errores como "column businessName does not exist":
+
+```bash
+# Parar la aplicación
+pm2 stop marvera-api
+
+# Ir al directorio del backend
+cd /var/www/marvera.mx/backend
+
+# Sincronizar schema con base de datos
+sudo npx prisma db push
+
+# Regenerar cliente Prisma
+sudo npx prisma generate
+
+# Reiniciar aplicación
+pm2 start marvera-api
+
+# Verificar que funciona
+pm2 logs marvera-api
+```
+
+**Nota**: Este error no es crítico. La aplicación funcionará, pero el usuario admin no se creará automáticamente.
+
+**ERRORES NORMALES QUE PUEDES VER:**
+- `column businessName does not exist` → Usar la solución anterior
+- `Unique constraint failed on the fields: (email)` → **NORMAL**: El usuario admin ya existe
 
 ---
 
@@ -503,6 +537,70 @@ sudo chmod -R 755 /var/www/marvera.mx
 cd /var/www/marvera
 npm run build                    # Frontend
 cd backend && npm run build      # Backend
+
+# PROBLEMA: Error "column businessName does not exist"
+# SOLUCIÓN: Sincronizar base de datos con schema
+cd /var/www/marvera.mx/backend
+sudo npx prisma db push          # Sincronizar schema con BD
+sudo npx prisma generate         # Regenerar cliente Prisma
+pm2 restart marvera-api          # Reiniciar aplicación
+
+# Si el error persiste, recrear la base de datos
+sudo rm database.sqlite          # Eliminar BD actual
+sudo npx prisma db push          # Crear BD nueva con schema actual
+pm2 restart marvera-api          # Reiniciar aplicación
+
+# PROBLEMA: nginx busca en /dist/ en lugar de directorio raíz
+# SOLUCIÓN: Verificar y corregir configuración nginx
+cat /etc/nginx/sites-available/marvera.mx | grep "root"    # Ver configuración actual
+sudo rm /etc/nginx/sites-enabled/*       # Limpiar configuraciones
+sudo ln -sf /etc/nginx/sites-available/marvera.mx /etc/nginx/sites-enabled/
+sudo nginx -t                            # Verificar configuración
+sudo systemctl restart nginx             # Reiniciar nginx
+
+# Si el frontend no carga correctamente
+ls -la /var/www/marvera.mx/index.html    # Verificar que existe
+sudo chown -R www-data:www-data /var/www/marvera.mx
+sudo chmod -R 755 /var/www/marvera.mx
+curl http://localhost                    # Test local
+
+# PROBLEMA: El sitio no carga en navegador pero curl funciona
+# CAUSA: El navegador intenta usar HTTPS pero no está configurado SSL
+# SOLUCIÓN: Instalar certificado SSL con Certbot
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+sudo certbot --nginx -d marvera.mx -d www.marvera.mx
+
+# O acceder temporalmente con http:// en lugar de https://
+# http://marvera.mx (funciona)
+# https://marvera.mx (falla hasta configurar SSL)
+
+# PROBLEMA: Imágenes no cargan (404)
+# SOLUCIÓN: Crear directorio de imágenes y copiar assets
+sudo mkdir -p /var/www/marvera.mx/images
+sudo cp -r /var/www/marvera/public/images/* /var/www/marvera.mx/images/ 2>/dev/null || echo "No public images"
+sudo cp -r /var/www/marvera/src/assets/images/* /var/www/marvera.mx/images/ 2>/dev/null || echo "No src images"
+sudo chown -R www-data:www-data /var/www/marvera.mx/images
+sudo chmod -R 755 /var/www/marvera.mx/images
+
+# Si no tienes imágenes, crear placeholders
+sudo mkdir -p /var/www/marvera.mx/images
+echo "placeholder" | sudo tee /var/www/marvera.mx/images/huachinango.jpg
+echo "placeholder" | sudo tee /var/www/marvera.mx/images/pulpo.jpg
+echo "placeholder" | sudo tee /var/www/marvera.mx/images/camaron-jumbo.jpg
+
+# PROBLEMA: Login falla con localhost:3001 en lugar de usar dominio
+# CAUSA: Frontend tiene configuraciones mixtas de API
+# SOLUCIÓN: Verificar variables de entorno del frontend
+grep -r "localhost:3001" /var/www/marvera.mx/assets/ || echo "No localhost encontrado en assets"
+grep -r "localhost" /var/www/marvera.mx/assets/ || echo "No localhost encontrado"
+
+# Si encuentra localhost, recompilar con variables correctas
+cd /var/www/marvera
+export VITE_API_URL=https://marvera.mx/api
+npm run build
+sudo cp -r dist/* /var/www/marvera.mx/
+sudo systemctl reload nginx
 ```
 
 ### Backup
@@ -512,6 +610,58 @@ sudo cp /var/www/marvera.mx/backend/database.sqlite /var/backups/marvera/
 
 # Backup completo
 sudo tar -czf /var/backups/marvera/marvera-$(date +%Y%m%d).tar.gz /var/www/marvera.mx
+```
+
+---
+
+### PASO 12: CONFIGURAR SSL CON CERTBOT
+
+#### 12.1 Instalar Certbot
+```bash
+# Instalar snapd si no está instalado
+sudo apt update
+sudo apt install snapd -y
+
+# Instalar certbot
+sudo snap install --classic certbot
+
+# Crear enlace simbólico
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+```
+
+#### 12.2 Obtener certificado SSL
+```bash
+# Obtener certificado SSL automáticamente
+sudo certbot --nginx -d marvera.mx -d www.marvera.mx
+
+# Seguir las instrucciones (ingresar email, aceptar términos)
+# Elegir opción 2 para redirigir HTTP a HTTPS
+```
+
+#### 12.3 Verificar configuración SSL
+```bash
+# Test del certificado
+sudo certbot certificates
+
+# Verificar renovación automática
+sudo certbot renew --dry-run
+
+# Test HTTPS
+curl https://marvera.mx
+curl https://marvera.mx/api/health
+```
+
+#### 12.4 Si Certbot falla, configuración manual SSL
+```bash
+# Crear certificado temporal para testing
+sudo mkdir -p /etc/ssl/certs
+sudo mkdir -p /etc/ssl/private
+
+# Solo para desarrollo/testing (NO para producción)
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/marvera.mx.key \
+    -out /etc/ssl/certs/marvera.mx.crt \
+    -subj "/C=MX/ST=State/L=City/O=MarVera/CN=marvera.mx"
 ```
 
 ---

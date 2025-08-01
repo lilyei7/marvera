@@ -19,7 +19,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const AdminPanel: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items: products } = useAppSelector((state: any) => state.products);
   const { user } = useAppSelector((state: any) => state.auth);
   const { toasts, showSuccess, showError, removeToast } = useToast();
   

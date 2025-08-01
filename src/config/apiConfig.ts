@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./environment";
 /**
  * Configuración centralizada de API para MarVera
  * 
@@ -5,11 +6,10 @@
  * y define constantes para timeouts y URLs.
  */
 
-// URL Base del servidor API
-// En desarrollo: localhost:3001 (backend local)
-// En producción: https://marvera.mx
-const isDevelopment = import.meta.env.DEV;
-export const API_BASE_URL = isDevelopment ? 'http://localhost:3001' : 'https://marvera.mx';
+// Re-export API_BASE_URL for other files to use
+export { API_BASE_URL };
+
+// URL Base del servidor API - imported from environment.ts
 export const REMOTE_API_URL = 'https://marvera.mx';
 export const ENABLE_FALLBACK = import.meta.env.VITE_ENABLE_FALLBACK !== 'false';
 
