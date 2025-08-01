@@ -419,7 +419,63 @@ EOF
 echo -e "${GREEN}✅ Página de prueba creada${NC}"
 
 # =============================================================================
-# 12. MOSTRAR INFORMACIÓN FINAL
+# 12. CONFIGURAR SSL AUTOMÁTICAMENTE
+# =============================================================================
+echo -e "${BLUE}🔒 Configurando SSL con Certbot...${NC}"
+
+# Preguntar si configurar SSL ahora
+read -p "¿Configurar SSL ahora? (y/n): " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}📧 Ingresa tu email para notificaciones SSL:${NC}"
+    read -p "Email: " SSL_EMAIL
+    
+    if [ ! -z "$SSL_EMAIL" ]; then
+        echo -e "${BLUE}🔒 Configurando SSL...${NC}"
+        
+        # Descargar y ejecutar script SSL
+        curl -s -o /tmp/configure-ssl.sh https://raw.githubusercontent.com/lilyei7/marvera/main/configure-ssl.sh 2>/dev/null || {
+            echo -e "${YELLOW}📦 Creando script SSL local...${NC}"
+            cat > /tmp/configure-ssl.sh << 'SSLEOF'
+#!/bin/bash
+# Script SSL simplificado
+EMAIL="$1"
+DOMAIN="marvera.mx"
+
+# Instalar certbot
+apt update -y
+snap install core; snap refresh core
+snap install --classic certbot
+ln -sf /snap/bin/certbot /usr/bin/certbot
+
+# Obtener certificado
+certbot --nginx --non-interactive --agree-tos --email "$EMAIL" -d "$DOMAIN" -d "www.$DOMAIN"
+
+# Configurar renovación
+echo "0 12 * * * /usr/bin/certbot renew --quiet" | crontab -
+
+echo "✅ SSL configurado exitosamente"
+SSLEOF
+        }
+        
+        chmod +x /tmp/configure-ssl.sh
+        bash /tmp/configure-ssl.sh "$SSL_EMAIL"
+        
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✅ SSL configurado exitosamente${NC}"
+        else
+            echo -e "${YELLOW}⚠️ SSL no pudo configurarse automáticamente${NC}"
+            echo -e "${YELLOW}💡 Ejecuta manualmente: bash configure-ssl.sh${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️ Email requerido para SSL${NC}"
+    fi
+else
+    echo -e "${YELLOW}ℹ️ SSL omitido. Ejecuta 'bash configure-ssl.sh' más tarde${NC}"
+fi
+
+# =============================================================================
+# 13. MOSTRAR INFORMACIÓN FINAL
 # =============================================================================
 echo ""
 echo -e "${CYAN}🎉 CONFIGURACIÓN COMPLETADA${NC}"
