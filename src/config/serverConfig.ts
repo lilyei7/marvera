@@ -1,8 +1,8 @@
 // Configuración del servidor para desarrollo
 export const SERVER_CONFIG = {
-  // IP de tu servidor
-  SERVER_IP: '148.230.87.198',
-  SERVER_PORT: '3001',
+  // Dominio de producción
+  SERVER_DOMAIN: 'marvera.mx',
+  SERVER_PORT: '', // Sin puerto para HTTPS
   
   // Modo de desarrollo - cambia esto según necesites
   USE_LOCAL_DATA: false, // true = usar datos locales, false = intentar servidor
@@ -12,7 +12,7 @@ export const SERVER_CONFIG = {
     if (this.USE_LOCAL_DATA) {
       return null; // No usar servidor, solo datos locales
     }
-    return `http://${this.SERVER_IP}:${this.SERVER_PORT}`;
+    return `https://${this.SERVER_DOMAIN}`;
   },
   
   // Timeouts
