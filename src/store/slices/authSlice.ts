@@ -71,48 +71,56 @@ export const verifyToken = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      console.log('🔍 Verificando token:', token ? 'Token presente' : 'No hay token');
+      console.log('🔍 [verifyToken] Iniciando verificación...');
       
       if (!token) {
+        console.log('❌ [verifyToken] No hay token');
         return rejectWithValue('No hay token');
       }
 
-      // Verificación temporal para admin
-      if (token === 'admin-token-123') {
-        return {
-          user: {
-            id: 1,
-            email: 'admin@marvera.com',
-            firstName: 'Administrador',
-            lastName: 'MarVera',
-            role: 'admin',
-            phone: '+1 (555) 123-4567',
-            isActive: true
-          }
-        };
-      }
+      console.log('📡 [verifyToken] Enviando request a API...');
+      
+      // Crear AbortController para timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ [verifyToken] Timeout - cancelando request');
+        controller.abort();
+      }, 10000); // 10 segundos timeout
 
-      console.log('🌐 Enviando request a:', `${API_BASE_URL}/api/auth/verify`);
       const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        signal: controller.signal
       });
 
-      console.log('📡 Response status:', response.status);
-      const data = await response.json();
-      console.log('📦 Response data:', data);
+      clearTimeout(timeoutId);
+      console.log('📡 [verifyToken] Response status:', response.status);
 
       if (!response.ok) {
-        console.error('❌ Token verification failed:', data);
+        const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+        console.error('❌ [verifyToken] Response error:', errorData);
         localStorage.removeItem('token');
-        return rejectWithValue(data.message || 'Token inválido');
+        return rejectWithValue(errorData.message || 'Token inválido');
       }
 
-      console.log('✅ Token verificado exitosamente');
-      return data;
+      const data = await response.json();
+      console.log('✅ [verifyToken] Verificación exitosa:', data.user?.email);
+
+      return {
+        user: data.user,
+        token: token
+      };
     } catch (error: any) {
+      console.error('❌ [verifyToken] Error caught:', error.message);
+      
+      if (error.name === 'AbortError') {
+        console.log('⏰ [verifyToken] Request cancelado por timeout');
+        return rejectWithValue('Timeout en verificación');
+      }
+      
       localStorage.removeItem('token');
       return rejectWithValue(error.message || 'Error de conexión');
     }
@@ -184,6 +192,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
         state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
       });
 
     // Register
@@ -208,15 +218,19 @@ const authSlice = createSlice({
     // Verify token
     builder
       .addCase(verifyToken.pending, (state) => {
+        console.log('🔄 [Redux] verifyToken.pending');
         state.isLoading = true;
       })
       .addCase(verifyToken.fulfilled, (state, action) => {
+        console.log('✅ [Redux] verifyToken.fulfilled:', action.payload.user?.email);
         state.isLoading = false;
         state.user = action.payload.user;
+        state.token = action.payload.token || state.token;
         state.isAuthenticated = true;
         state.error = null;
       })
-      .addCase(verifyToken.rejected, (state) => {
+      .addCase(verifyToken.rejected, (state, action) => {
+        console.log('❌ [Redux] verifyToken.rejected:', action.payload);
         state.isLoading = false;
         state.user = null;
         state.token = null;

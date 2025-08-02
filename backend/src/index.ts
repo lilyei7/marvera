@@ -23,10 +23,14 @@ const io = new Server(server, {
   cors: {
     origin: [
       "https://marvera.mx",
+      "https://www.marvera.mx",
+      "http://marvera.mx", 
+      "http://www.marvera.mx",
       "http://localhost:5173",
       "http://localhost:5174"
     ],
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true
   }
 });
 
@@ -70,6 +74,9 @@ if (process.env.NODE_ENV === 'production') {
 app.use(cors({
   origin: [
     'https://marvera.mx',
+    'https://www.marvera.mx',
+    'http://marvera.mx',
+    'http://www.marvera.mx',
     'http://localhost:5173',
     'http://localhost:5174'
   ],

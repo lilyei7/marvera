@@ -56,8 +56,13 @@ export const fetchProducts = createAsyncThunk(
       
       const data = await response.json();
       
+      console.log('📊 Datos recibidos para productos:', data);
+      
+      // La API devuelve: {success: true, data: [...], count: 5}
+      const productsArray = data.data || data.products || [];
+      
       // Convertir productos del backend al formato del frontend
-      const products: Product[] = data.products.map((product: any) => ({
+      const products: Product[] = productsArray.map((product: any) => ({
         id: product.id.toString(),
         name: product.name,
         description: product.description,

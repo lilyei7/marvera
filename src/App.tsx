@@ -23,6 +23,9 @@ import BranchesAdmin from './components/admin/BranchesAdmin';
 import ProductsAdmin from './components/admin/ProductsAdmin';
 import CategoryManager from './components/admin/CategoryManager';
 import WholesaleManager from './components/admin/WholesaleManager';
+import OrdersManager from './pages/admin/OrdersManager';
+import ReportsManager from './pages/admin/ReportsManager';
+import SettingsManager from './pages/admin/SettingsManager';
 import BranchesPage from './pages/BranchesPage';
 import NotificationManager from './components/NotificationManager';
 import './App.css';
@@ -103,6 +106,21 @@ function AppContent() {
           <Route path="/admin/wholesale" element={
             <ProtectedRoute requireAdmin>
               <WholesaleManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/orders" element={
+            <ProtectedRoute requireAdmin>
+              <OrdersManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reports" element={
+            <ProtectedRoute requireAdmin>
+              <ReportsManager />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/settings" element={
+            <ProtectedRoute requireAdmin>
+              <SettingsManager />
             </ProtectedRoute>
           } />
           <Route path="/admin-panel" element={<AdminPanel />} />

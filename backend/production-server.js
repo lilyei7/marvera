@@ -3,6 +3,11 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
+// Import routes
+const adminRoutes = require('./src/routes/admin');
+const wholesaleRoutes = require('./routes/wholesaleProducts');
+const authRoutes = require('./src/routes/api/auth');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const SERVER_IP = '148.230.87.198';
@@ -28,6 +33,10 @@ connectDB();
 // Enhanced CORS configuration for production
 app.use(cors({
   origin: [
+    'https://marvera.mx',
+    'https://www.marvera.mx',
+    'http://marvera.mx',
+    'http://www.marvera.mx',
     'http://localhost:5173', 
     'http://localhost:5174',
     `http://${SERVER_IP}:5173`,
@@ -56,6 +65,11 @@ app.use((req, res, next) => {
   console.log(`📍 ${req.method} ${req.originalUrl} - ${new Date().toISOString()}`);
   next();
 });
+
+// Register routes
+app.use('/api/admin', adminRoutes);
+app.use('/api/wholesale-products', wholesaleRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check with detailed info
 app.get('/api/health', (req, res) => {
@@ -264,7 +278,8 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Authentication endpoints
+// Authentication endpoints - Usando rutas del archivo auth.js
+/*
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -299,6 +314,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
   }
 });
+*/
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -14,20 +14,37 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const location = useLocation();
-  const { user, isLoading, isAuthenticated } = useAppSelector((state) => state.auth);
+  const { user, isLoading, isAuthenticated, token } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     // Verificar token al cargar la ruta protegida
-    const token = localStorage.getItem('token');
-    console.log('🛡️ ProtectedRoute - Token en localStorage:', token ? token.substring(0, 20) + '...' : 'null');
-    console.log('👤 Usuario actual:', user);
-    console.log('🔒 Require admin:', requireAdmin);
+    const localToken = localStorage.getItem('token');
+    console.log('🛡️ ProtectedRoute - Estado actual:', {
+      isAuthenticated,
+      hasUser: !!user,
+      hasLocalToken: !!localToken,
+      hasReduxToken: !!token,
+      userEmail: user?.email,
+      userRole: user?.role,
+      isLoading
+    });
     
-    if (token && !user) {
-      console.log('🔄 Verificando token...');
+    if (localToken && !isAuthenticated && !isLoading) {
+      console.log('🔄 Token encontrado pero no autenticado - Verificando...');
       dispatch(verifyToken());
     }
-  }, [dispatch, user]);
+
+    // Timeout de emergencia para evitar loading infinito
+    const timeoutId = setTimeout(() => {
+      if (isLoading && localToken) {
+        console.log('⏰ ProtectedRoute - Timeout alcanzado, redirigiendo...');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    }, 15000); // 15 segundos
+
+    return () => clearTimeout(timeoutId);
+  }, [dispatch, user, isAuthenticated, token, isLoading]);
 
   // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
