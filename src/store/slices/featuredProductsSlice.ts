@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { API_ENDPOINTS, API_CONFIG } from '../../config/apiConfig';
+import { getApiUrl, API_CONFIG, API_SETTINGS } from '../../config/api';
 
 export interface FeaturedProduct {
   id: string;
@@ -87,18 +87,18 @@ export const fetchFeaturedProducts = createAsyncThunk(
   'featuredProducts/fetchFeaturedProducts',
   async (_) => {
     try {
-      console.log(`🔍 Intentando conectar al servidor: ${API_ENDPOINTS.FEATURED_PRODUCTS}`);
+      console.log(`🔍 Intentando conectar al servidor: ${getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS_FEATURED)}`);
       
       // Crear un AbortController para manejar timeout manualmente
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         console.log('⏰ Timeout alcanzado, usando datos de fallback');
         controller.abort();
-      }, API_CONFIG.TIMEOUT);
+      }, API_SETTINGS.TIMEOUT);
       
-      const response = await fetch(API_ENDPOINTS.FEATURED_PRODUCTS, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS_FEATURED), {
         method: 'GET',
-        headers: API_CONFIG.COMMON_HEADERS,
+        headers: API_SETTINGS.HEADERS,
         signal: controller.signal
       });
       

@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getApiUrl, API_CONFIG } from '../../config/api';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { Product, ProductCategory } from '../../types';
 
@@ -37,8 +38,7 @@ export const fetchProducts = createAsyncThunk(
       // Añadir un pequeño retraso para evitar el error "Too Many Requests" (429)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
-      const url = `${API_BASE_URL}/api/products`;
+      const url = getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS);
       
       console.log(`🔄 Conectando a la API: ${url}`);
       
@@ -56,10 +56,39 @@ export const fetchProducts = createAsyncThunk(
       
       const data = await response.json();
       
-      console.log('📊 Datos recibidos para productos:', data);
+      console.log('📊 DATOS PRODUCTOS v3.0:', data);
+      console.log('📊 TIPO:', typeof data);
+      console.log('📊 SUCCESS:', data.success);
+      console.log('📊 DATA FIELD:', data.data);
+      console.log('📊 IS DATA ARRAY:', Array.isArray(data.data));
       
       // La API devuelve: {success: true, data: [...], count: 5}
-      const productsArray = data.data || data.products || [];
+      let productsArray = [];
+      
+      if (data && data.success && data.data && Array.isArray(data.data)) {
+        productsArray = data.data;
+        console.log('✅ PRODUCTOS OBTENIDOS:', productsArray.length);
+      } else if (data.data && Array.isArray(data.data)) {
+        productsArray = data.data;
+        console.log('✅ DATOS DIRECTOS:', productsArray.length);
+      } else if (data.products && Array.isArray(data.products)) {
+        productsArray = data.products;
+        console.log('✅ PRODUCTS FIELD:', productsArray.length);
+      } else if (Array.isArray(data)) {
+        productsArray = data;
+        console.log('✅ ARRAY DIRECTO:', productsArray.length);
+      } else {
+        console.error('❌ ESTRUCTURA NO RECONOCIDA:', data);
+        productsArray = [];
+      }
+      
+      console.log('📊 ARRAY FINAL v3.0:', productsArray);
+      console.log('📊 LONGITUD:', productsArray?.length || 0);
+      
+      if (!Array.isArray(productsArray)) {
+        console.error('❌ NO ES ARRAY:', productsArray);
+        throw new Error('La respuesta no contiene un array de productos válido');
+      }
       
       // Convertir productos del backend al formato del frontend
       const products: Product[] = productsArray.map((product: any) => ({
@@ -67,17 +96,17 @@ export const fetchProducts = createAsyncThunk(
         name: product.name,
         description: product.description,
         price: product.price,
-        category: getCategorySlug(product.categoryName),
-        imageUrl: product.image || (product.images && product.images.length > 0 ? product.images[0] : ''),
+        category: getCategorySlug(product.category || product.categoryName),
+        imageUrl: product.imageUrl || product.image || (product.images && product.images.length > 0 ? product.images[0] : ''),
         inStock: product.stock > 0,
         origin: product.origin || 'MarVera',
         freshness: product.freshness || 'Fresh',
         weight: product.weight || 1,
         unit: product.unit || 'kg',
-        isFeatured: product.isFeatured === 1,
+        isFeatured: product.isFeatured === true || product.isFeatured === 1,
         images: product.images || [],
         stock: product.stock,
-        categoryName: product.categoryName
+        categoryName: product.category || product.categoryName
       }));
       
       return products;
@@ -123,28 +152,56 @@ const productsSlice = createSlice({
     },
     
     applyFilters: (state) => {
-      let filtered = [...state.items];
+      console.log('🔍 Aplicando filtros. State.items:', state.items);
+      console.log('🔍 Es array state.items?', Array.isArray(state.items));
+      console.log('🔍 State.items length:', state.items?.length);
+      
+      let filtered = [...(state.items || [])];
+      
+      // Verificar que items sea un array válido
+      if (!Array.isArray(state.items)) {
+        console.error('❌ state.items no es un array:', state.items);
+        state.filteredItems = [];
+        return;
+      }
+      
+      console.log('🔍 Filtered inicial length:', filtered.length);
       
       // Category filter
       if (state.selectedCategory !== 'all') {
-        filtered = filtered.filter(product => product.category === state.selectedCategory);
+        filtered = filtered.filter(product => product?.category === state.selectedCategory);
+        console.log('🔍 Después de filtro categoría:', filtered.length);
       }
       
       // Search filter
       if (state.searchQuery) {
         const query = state.searchQuery.toLowerCase();
         filtered = filtered.filter(product =>
-          product.name.toLowerCase().includes(query) ||
-          (product.description && product.description.toLowerCase().includes(query))
+          product?.name?.toLowerCase().includes(query) ||
+          (product?.description && product.description.toLowerCase().includes(query))
         );
+        console.log('🔍 Después de filtro búsqueda:', filtered.length);
       }
       
       // Price filter
       filtered = filtered.filter(product =>
-        product.price >= state.priceRange.min && product.price <= state.priceRange.max
+        product?.price >= state.priceRange.min && product?.price <= state.priceRange.max
       );
       
-      state.filteredItems = filtered;
+      console.log('✅ Filtros aplicados. Productos filtrados:', filtered.length);
+      console.log('✅ Filtered final es array?', Array.isArray(filtered));
+      console.log('✅ Filtered final:', filtered);
+      
+      // EXTRA SAFETY: Asegurar que sea un array válido
+      if (Array.isArray(filtered)) {
+        state.filteredItems = filtered;
+      } else {
+        console.error('❌ Filtered no es array!', filtered);
+        state.filteredItems = [];
+      }
+      
+      console.log('✅ State.filteredItems final:', state.filteredItems);
+      console.log('✅ State.filteredItems es array?', Array.isArray(state.filteredItems));
     },
     
     addProduct: (state, action: PayloadAction<Product>) => {
@@ -169,17 +226,42 @@ const productsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchProducts.pending, (state) => {
+        console.log('🔄 fetchProducts.pending - Iniciando carga...');
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
+        console.log('✅ fetchProducts.fulfilled - payload recibido:', action.payload);
+        console.log('✅ Payload es array?', Array.isArray(action.payload));
+        console.log('✅ Payload length:', action.payload?.length);
+        console.log('✅ Primer producto:', action.payload?.[0]);
+        
         state.loading = false;
-        state.items = action.payload;
-        state.filteredItems = action.payload;
+        
+        // Verificar que la respuesta sea un array válido
+        if (Array.isArray(action.payload)) {
+          state.items = action.payload;
+          state.filteredItems = action.payload;
+          console.log('✅ State.items establecido. Length:', state.items.length);
+          console.log('✅ State.filteredItems establecido. Length:', state.filteredItems.length);
+          console.log('✅ State.items es array?', Array.isArray(state.items));
+          console.log('✅ State.filteredItems es array?', Array.isArray(state.filteredItems));
+        } else {
+          console.error('❌ La respuesta no es un array válido:', action.payload);
+          state.items = [];
+          state.filteredItems = [];
+          state.error = 'Datos de productos inválidos';
+        }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
+        console.error('❌ fetchProducts.rejected:', action.error);
+        console.error('❌ Error message:', action.error.message);
+        console.error('❌ Error payload:', action.payload);
+        
         state.loading = false;
         state.error = action.error.message || 'Error al cargar productos';
+        state.items = [];
+        state.filteredItems = [];
       });
   },
 });

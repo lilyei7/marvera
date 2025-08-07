@@ -1,16 +1,112 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MagnifyingGlassIcon, 
-  FunnelIcon, 
-  XMarkIcon, 
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import AdminLayout from '../../layouts/AdminLayout';
 import ProductModal from './ProductModal';
 import type { Product, ProductCategory } from '../../types';
+
+// Carousel component for multiple images
+const ImageCarousel: React.FC<{ images: string[]; productName: string }> = ({ images, productName }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Use only images that exist and are valid
+  const validImages = React.useMemo(() => {
+    return images?.filter(img => img && img.trim() !== '') || [];
+  }, [images]);
+  
+  const totalImages = validImages.length;
+  
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev + 1) % totalImages);
+  };
+  
+  const prevImage = () => {
+    setCurrentIndex((prev) => (prev - 1 + totalImages) % totalImages);
+  };
+  
+  if (totalImages === 0) {
+    return (
+      <div className="h-12 w-12 flex-shrink-0">
+        <img
+          className="h-12 w-12 rounded-lg object-cover"
+          src="/images/default.webp"
+          alt={productName}
+        />
+      </div>
+    );
+  }
+  
+  if (totalImages === 1) {
+    return (
+      <div className="h-12 w-12 flex-shrink-0">
+        <img
+          className="h-12 w-12 rounded-lg object-cover"
+          src={validImages[0]}
+          alt={productName}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/images/default.webp';
+          }}
+        />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="h-12 w-16 flex-shrink-0 relative group">
+      <img
+        className="h-12 w-16 rounded-lg object-cover"
+        src={validImages[currentIndex]}
+        alt={`${productName} - ${currentIndex + 1}`}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = '/images/default.webp';
+        }}
+      />
+      
+      {/* Navigation arrows - only show on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between">
+        <button
+          onClick={prevImage}
+          className="bg-black bg-opacity-50 text-white p-0.5 rounded-l-lg hover:bg-opacity-70 transition-all"
+          title="Imagen anterior"
+        >
+          <ChevronLeftIcon className="h-3 w-3" />
+        </button>
+        <button
+          onClick={nextImage}
+          className="bg-black bg-opacity-50 text-white p-0.5 rounded-r-lg hover:bg-opacity-70 transition-all"
+          title="Siguiente imagen"
+        >
+          <ChevronRightIcon className="h-3 w-3" />
+        </button>
+      </div>
+      
+      {/* Image indicator dots */}
+      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
+        {validImages.map((_, index) => (
+          <div
+            key={index}
+            className={`w-1 h-1 rounded-full transition-colors ${
+              index === currentIndex ? 'bg-blue-500' : 'bg-gray-300'
+            }`}
+          />
+        ))}
+      </div>
+      
+      {/* Image counter */}
+      <div className="absolute top-0 right-0 bg-black bg-opacity-70 text-white text-xs px-1 rounded-bl-lg">
+        {currentIndex + 1}/{totalImages}
+      </div>
+    </div>
+  );
+};
 
 const ProductsAdmin: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -20,7 +116,6 @@ const ProductsAdmin: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://marvera.mx';
 
@@ -33,34 +128,189 @@ const ProductsAdmin: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No hay token de autenticación');
+        setProducts([]);
+        return;
+      }
+      
+      console.log('🔐 Fetching admin products...');
+      
       const response = await fetch(`${API_BASE_URL}/api/admin/products`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
+      console.log('📡 Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Error al cargar productos');
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
+        }
+        const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
-      setProducts(data.products || data || []);
+      console.log('📊 Raw data received:', data);
+      
+      // Manejar diferentes formatos de respuesta de forma defensiva
+      let productsArray: any[] = [];
+      
+      try {
+        if (data && typeof data === 'object') {
+          if (data.success && Array.isArray(data.data)) {
+            productsArray = data.data;
+            console.log('✅ Using data.data array:', productsArray.length);
+          } else if (Array.isArray(data.products)) {
+            productsArray = data.products;
+            console.log('✅ Using data.products array:', productsArray.length);
+          } else if (Array.isArray(data)) {
+            productsArray = data;
+            console.log('✅ Using direct array:', productsArray.length);
+          } else {
+            console.warn('⚠️ Unexpected data format, using empty array:', data);
+            productsArray = [];
+          }
+        } else {
+          console.warn('⚠️ Data is not an object, using empty array:', data);
+          productsArray = [];
+        }
+      } catch (parseError) {
+        console.error('❌ Error parsing response data:', parseError);
+        productsArray = [];
+      }
+      
+      // Validar que sea un array
+      if (!Array.isArray(productsArray)) {
+        console.error('❌ Products data is not an array:', productsArray);
+        productsArray = [];
+      }
+      
+      // Validar y normalizar cada producto
+      const validatedProducts: Product[] = productsArray
+        .filter(item => item && typeof item === 'object') // Filtrar items válidos
+        .map((product: any, index: number) => {
+          try {
+            return {
+              id: product.id ? String(product.id) : `temp-${index}`,
+              name: product.name || 'Sin nombre',
+              description: product.description || '',
+              price: Number(product.price) || 0,
+              category: product.category?.name || product.categoryName || product.category || 'otros',
+              imageUrl: (() => {
+                try {
+                  // Parse images from JSON string if needed
+                  let parsedImages: string[] = [];
+                  if (typeof product.images === 'string') {
+                    parsedImages = JSON.parse(product.images);
+                  } else if (Array.isArray(product.images)) {
+                    parsedImages = product.images;
+                  }
+                  
+                  // Return first image URL or fallback
+                  if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+                    return `https://marvera.mx${parsedImages[0]}`;
+                  }
+                  
+                  // Fallback to other image fields
+                  if (product.imageUrl) return product.imageUrl;
+                  if (product.image) return product.image;
+                  
+                  return '';
+                } catch (e) {
+                  console.warn('Error parsing product images:', e, product.images);
+                  return product.imageUrl || product.image || '';
+                }
+              })(),
+              inStock: product.inStock !== undefined ? Boolean(product.inStock) : Number(product.stock) > 0,
+              stock: Number(product.stock) || 0,
+              unit: product.unit || 'kg',
+              isFeatured: Boolean(product.isFeatured),
+              slug: product.slug || '',
+              comparePrice: product.comparePrice ? Number(product.comparePrice) : undefined,
+              images: (() => {
+                try {
+                  // Parse images from JSON string if needed
+                  if (typeof product.images === 'string') {
+                    const parsed = JSON.parse(product.images);
+                    return Array.isArray(parsed) ? parsed.map(url => `https://marvera.mx${url}`) : [];
+                  } else if (Array.isArray(product.images)) {
+                    return product.images.map((url: string) => url.startsWith('http') ? url : `https://marvera.mx${url}`);
+                  }
+                  return [];
+                } catch (e) {
+                  console.warn('Error parsing product images array:', e, product.images);
+                  return [];
+                }
+              })(),
+              origin: product.origin || '',
+              freshness: product.freshness || '',
+              weight: Number(product.weight) || 1,
+              categoryName: product.category?.name || product.categoryName || product.category || 'otros'
+            } as Product;
+          } catch (itemError) {
+            console.error('❌ Error processing product item:', itemError, product);
+            return null;
+          }
+        })
+        .filter((product): product is Product => product !== null); // Filtrar productos válidos
+      
+      console.log('✅ Validated products:', validatedProducts.length);
+      setProducts(validatedProducts);
+      
     } catch (error) {
-      console.error('Error:', error);
-      setError('Error al cargar productos');
+      console.error('❌ Error fetching products:', error);
+      setError(error instanceof Error ? error.message : 'Error al cargar productos');
       setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filtrar productos
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Filtrar productos de forma completamente segura
+  const filteredProducts = React.useMemo(() => {
+    try {
+      if (!Array.isArray(products)) {
+        console.warn('⚠️ Products is not an array for filtering:', products);
+        return [];
+      }
+
+      return products.filter((product) => {
+        try {
+          if (!product || typeof product !== 'object') {
+            return false;
+          }
+          
+          const searchLower = (searchTerm || '').toLowerCase();
+          const productName = (product.name || '').toLowerCase();
+          const productDesc = (product.description || '').toLowerCase();
+          
+          const matchesSearch = !searchTerm || 
+            productName.includes(searchLower) || 
+            productDesc.includes(searchLower);
+          
+          const matchesCategory = selectedCategory === 'all' || 
+            product.category === selectedCategory;
+          
+          return matchesSearch && matchesCategory;
+        } catch (filterError) {
+          console.error('❌ Error filtering product:', filterError, product);
+          return false;
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error in filteredProducts calculation:', error);
+      return [];
+    }
+  }, [products, searchTerm, selectedCategory]);
 
   const handleCreateProduct = () => {
     setEditingProduct(null);
@@ -72,109 +322,130 @@ const ProductsAdmin: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleSaveProduct = async (productData: Partial<Product>, imageFile?: File) => {
+  const handleSaveProduct = async (productData: any, imageFiles?: File[]) => {
     try {
-      const formData = new FormData();
+      console.log('💾 SAVING PRODUCT - Start:', productData);
       
-      // Agregar datos del producto
-      formData.append('name', productData.name || '');
-      formData.append('description', productData.description || '');
-      formData.append('price', String(productData.price || 0));
-      formData.append('category', productData.category || '');
-      formData.append('unit', productData.unit || 'kg');
-      formData.append('inStock', String(productData.inStock || true));
-      formData.append('origin', productData.origin || '');
-      formData.append('freshness', productData.freshness || '');
-      formData.append('weight', String(productData.weight || 0));
-      formData.append('isFeatured', String(productData.isFeatured || false));
-      
-      // Agregar imagen si existe
-      if (imageFile) {
-        formData.append('image', imageFile);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No hay token de autenticación');
       }
 
-      let response;
-      if (editingProduct) {
-        // Actualizar producto existente
-        response = await fetch(`${API_BASE_URL}/api/admin/products/${editingProduct.id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: formData
+      // Determinar si es creación o actualización
+      const isEditing = editingProduct && editingProduct.id;
+      const url = isEditing 
+        ? `${API_BASE_URL}/api/admin/products/${editingProduct.id}`
+        : `${API_BASE_URL}/api/admin/products`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      console.log(`💾 ${method} request to:`, url);
+      console.log('💾 Product data to send:', productData);
+
+      // Preparar FormData si hay imágenes
+      let body: string | FormData;
+      let headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`
+      };
+
+      if (imageFiles && imageFiles.length > 0) {
+        console.log('📸 UPLOADING WITH', imageFiles.length, 'IMAGE FILES');
+        
+        const formData = new FormData();
+        
+        // Agregar todas las imágenes al FormData
+        imageFiles.forEach((file, index) => {
+          formData.append('images', file);
+          console.log(`📸 Added image ${index + 1}:`, file.name, file.size);
         });
+        
+        // Agregar datos del producto al FormData
+        Object.keys(productData).forEach(key => {
+          const value = productData[key];
+          if (value !== null && value !== undefined) {
+            formData.append(key, String(value));
+          }
+        });
+
+        body = formData;
+        // No incluir Content-Type para multipart/form-data
       } else {
-        // Crear nuevo producto
-        response = await fetch(`${API_BASE_URL}/api/admin/products`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: formData
-        });
+        console.log('📝 SAVING WITHOUT IMAGE');
+        
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify(productData);
       }
+
+      console.log('🌐 Making request with headers:', headers);
+
+      const response = await fetch(url, {
+        method,
+        headers,
+        body
+      });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al guardar producto');
+        const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+        console.error('❌ SAVE ERROR RESPONSE:', errorData);
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
-      // Recargar productos
-      await fetchProducts();
+      const responseData = await response.json();
+      console.log('✅ SAVE SUCCESS RESPONSE:', responseData);
+
+      // Cerrar modal y refrescar lista
       setShowModal(false);
       setEditingProduct(null);
       
-      // Mostrar mensaje de éxito
-      alert(editingProduct ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
+      // Refrescar productos
+      await fetchProducts();
+      
+      console.log('✅ PRODUCT SAVE COMPLETED');
       
     } catch (error) {
-      console.error('Error saving product:', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Error al guardar producto'}`);
+      console.error('❌ ERROR SAVING PRODUCT:', error);
+      throw error; // Re-throw para que ProductModal pueda manejarlo
     }
   };
 
-  const handleDeleteProduct = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) {
       return;
     }
-    
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/products/${id}`, {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Error al eliminar producto');
       }
-      
-      // Recargar productos
-      await fetchProducts();
-      alert('Producto eliminado exitosamente');
-      
+
+      await fetchProducts(); // Recargar productos
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Error:', error);
       alert('Error al eliminar producto');
     }
   };
 
-  const handleViewProduct = (product: Product) => {
-    // TODO: Implementar vista de detalles del producto
-    console.log('Ver producto:', product);
-  };
-
-  const handleCategoryChange = (category: ProductCategory | 'all') => {
-    setSelectedCategory(category);
-    setIsMobileFiltersOpen(false);
-  };
-
   if (loading) {
     return (
-      <AdminLayout title="Gestión de Productos" subtitle="Cargando...">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <AdminLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando productos...</p>
+            </div>
+          </div>
         </div>
       </AdminLayout>
     );
@@ -182,293 +453,197 @@ const ProductsAdmin: React.FC = () => {
 
   if (error) {
     return (
-      <AdminLayout title="Gestión de Productos" subtitle="Error al cargar productos">
-        <div className="text-center py-8">
-          <p className="text-red-500 mb-4">{error}</p>
-          <button 
-            onClick={fetchProducts}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-          >
-            Reintentar
-          </button>
+      <AdminLayout>
+        <div className="p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="text-red-600 text-4xl mb-4">⚠️</div>
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Error al cargar productos</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={fetchProducts}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              Reintentar
+            </button>
+          </div>
         </div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout 
-      title="Gestión de Productos"
-      subtitle="Administra el catálogo de productos del sistema"
-    >
-      <div className="space-y-6">
+    <AdminLayout>
+      <div className="p-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div></div>
-        </div>
-        
-        <button 
-          onClick={handleCreateProduct}
-          className="mt-4 md:mt-0 inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Nuevo Producto
-        </button>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <div className="w-6 h-6 bg-blue-500 rounded"></div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Total Productos</p>
-              <p className="text-2xl font-bold text-gray-900">{products.length}</p>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestión de Productos</h1>
+            <p className="text-gray-600">
+              Total: {Array.isArray(products) ? products.length : 0} productos | 
+              Mostrando: {Array.isArray(filteredProducts) ? filteredProducts.length : 0}
+            </p>
           </div>
+          <button
+            onClick={handleCreateProduct}
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Nuevo Producto
+          </button>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <div className="w-6 h-6 bg-green-500 rounded"></div>
+        {/* Search and Filters */}
+        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar productos..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">En Stock</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {products.filter(p => p.inStock).length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <div className="w-6 h-6 bg-yellow-500 rounded"></div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Agotados</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {products.filter(p => !p.inStock).length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <div className="w-6 h-6 bg-purple-500 rounded"></div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Destacados</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {products.filter(p => p.isFeatured).length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filtros y búsqueda */}
-      <div className="bg-white p-6 rounded-lg shadow border">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Barra de búsqueda */}
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar productos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
-
-          {/* Filtro de categoría */}
-          <div className="relative">
-            <button
-              onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-              className="md:hidden flex items-center px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50"
-            >
-              <FunnelIcon className="h-5 w-5 mr-2" />
-              Filtros
-            </button>
-
-            <select
-              value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value as ProductCategory | 'all')}
-              className="hidden md:block px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="all">Todas las categorías</option>
-              {categories.slice(1).map(category => (
-                <option key={category} value={category}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Filtros móviles */}
-        {isMobileFiltersOpen && (
-          <div className="md:hidden mt-4 p-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-gray-900">Categorías</h3>
-              <button
-                onClick={() => setIsMobileFiltersOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+            
+            {/* Category Filter */}
+            <div className="lg:w-64">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value as ProductCategory | 'all')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryChange(category)}
-                  className={`block w-full text-left px-3 py-2 rounded-lg text-sm ${
-                    selectedCategory === category
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {category === 'all' ? 'Todas las categorías' : category.charAt(0).toUpperCase() + category.slice(1)}
-                </button>
-              ))}
+                <option value="all">Todas las categorías</option>
+                {categories.slice(1).map((category) => (
+                  <option key={category} value={category}>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Lista de productos */}
-      <div className="bg-white rounded-lg shadow border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Productos ({filteredProducts.length})
-          </h2>
         </div>
 
-        {filteredProducts.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-gray-500">No se encontraron productos</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Producto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categoría
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Precio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
-                          {product.imageUrl ? (
-                            <img
-                              src={`https://marvera.mx${product.imageUrl}`}
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-gray-400 text-xl">🐟</span>
-                          )}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {product.name}
-                          </div>
-                          <div className="text-sm text-gray-500 max-w-xs truncate">
-                            {product.description}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${product.price.toLocaleString()} / {product.unit}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.inStock 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.inStock ? 'En Stock' : 'Agotado'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleViewProduct(product)}
-                          className="text-blue-600 hover:text-blue-900 p-1"
-                          title="Ver detalles"
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditProduct(product)}
-                          className="text-yellow-600 hover:text-yellow-900 p-1"
-                          title="Editar"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(Number(product.id))}
-                          className="text-red-600 hover:text-red-900 p-1"
-                          title="Eliminar"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+        {/* Products Grid */}
+        <div className="bg-white rounded-lg shadow-sm border">
+          {!Array.isArray(filteredProducts) || filteredProducts.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <div className="w-8 h-8 bg-gray-400 rounded opacity-50"></div>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {!Array.isArray(products) || products.length === 0 ? 'No hay productos' : 'No se encontraron productos'}
+              </h3>
+              <p className="text-gray-500">
+                {!Array.isArray(products) || products.length === 0 
+                  ? 'Comienza agregando tu primer producto'
+                  : 'Intenta cambiar los filtros de búsqueda'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Producto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Categoría
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Precio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <ImageCarousel 
+                            images={product.images || []} 
+                            productName={product.name} 
+                          />
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {product.name}
+                            </div>
+                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                              {product.description}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {product.category || 'Sin categoría'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${product.price?.toFixed(2) || '0.00'} / {product.unit || 'kg'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          product.inStock 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {product.inStock ? 'Disponible' : 'Agotado'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleEditProduct(product)}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                            title="Editar"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-900 p-1"
+                            title="Eliminar"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Product Modal */}
+        {showModal && (
+          <ProductModal
+            product={editingProduct}
+            isOpen={showModal}
+            onClose={() => {
+              setShowModal(false);
+              setEditingProduct(null);
+            }}
+            onSave={handleSaveProduct}
+            categories={categories.slice(1) as ProductCategory[]}
+          />
         )}
       </div>
-
-      {/* Modal */}
-      <ProductModal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setEditingProduct(null);
-        }}
-        onSave={handleSaveProduct}
-        product={editingProduct}
-        categories={categories.slice(1)} // Remove 'all' from categories
-      />
     </AdminLayout>
   );
 };
 
 export default ProductsAdmin;
-
-

@@ -11,10 +11,13 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  SparklesIcon,
+  PlayIcon
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logoutUser } from '../store/slices/authSlice';
+import { FRONTEND_ROUTES } from '../config/routes';
 
 const AdminNavbar: React.FC = () => {
   const location = useLocation();
@@ -24,14 +27,16 @@ const AdminNavbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-    { name: 'Productos', href: '/admin/products', icon: CubeIcon },
-    { name: 'Categorías', href: '/admin/categories', icon: TagIcon },
-    { name: 'Mayoreo', href: '/admin/wholesale', icon: BuildingStorefrontIcon },
-    { name: 'Órdenes', href: '/admin/orders', icon: TruckIcon },
-    { name: 'Usuarios', href: '/admin/users', icon: UserGroupIcon },
-    { name: 'Reportes', href: '/admin/reports', icon: ChartBarIcon },
-    { name: 'Configuración', href: '/admin/settings', icon: Cog6ToothIcon },
+    { name: 'Dashboard', href: FRONTEND_ROUTES.ADMIN.DASHBOARD, icon: HomeIcon },
+    { name: 'Productos', href: FRONTEND_ROUTES.ADMIN.PRODUCTS, icon: CubeIcon },
+    { name: 'Categorías', href: FRONTEND_ROUTES.ADMIN.CATEGORIES, icon: TagIcon },
+    { name: 'Ofertas', href: FRONTEND_ROUTES.ADMIN.OFFERS, icon: SparklesIcon },
+    { name: 'Slideshow', href: FRONTEND_ROUTES.ADMIN.SLIDESHOW, icon: PlayIcon },
+    { name: 'Mayoreo', href: FRONTEND_ROUTES.ADMIN.WHOLESALE, icon: BuildingStorefrontIcon },
+    { name: 'Órdenes', href: FRONTEND_ROUTES.ADMIN.ORDERS, icon: TruckIcon },
+    { name: 'Usuarios', href: FRONTEND_ROUTES.ADMIN.USERS, icon: UserGroupIcon },
+    { name: 'Reportes', href: FRONTEND_ROUTES.ADMIN.REPORTS, icon: ChartBarIcon },
+    { name: 'Configuración', href: FRONTEND_ROUTES.ADMIN.SETTINGS, icon: Cog6ToothIcon },
   ];
 
   const handleLogout = () => {
@@ -42,24 +47,24 @@ const AdminNavbar: React.FC = () => {
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16">
           {/* Logo y título */}
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0">
             <Link to="/admin" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
               <img 
                 src="/logomarvera.png" 
                 alt="MarVera Admin" 
-                className="h-10 w-auto"
+                className="h-8 w-auto"
               />
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-primary">MarVera</span>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-lg font-bold text-primary">MarVera</span>
                 <span className="text-xs text-gray-500 -mt-1">Panel Admin</span>
               </div>
             </Link>
           </div>
 
-          {/* Navegación Desktop */}
-          <div className="hidden lg:flex items-center space-x-1">
+          {/* Navegación Desktop - Centrada */}
+          <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center max-w-4xl">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
@@ -68,24 +73,24 @@ const AdminNavbar: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                     isActive
                       ? 'bg-primary text-white shadow-md'
                       : 'text-gray-600 hover:text-primary hover:bg-blue-50'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.name}</span>
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden xl:block">{item.name}</span>
                 </Link>
               );
             })}
           </div>
 
           {/* User Menu Desktop */}
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-2 flex-shrink-0">
             {/* User Info */}
             <div className="flex items-center space-x-2">
-              <div className="text-right">
+              <div className="text-right hidden xl:block">
                 <p className="text-sm font-medium text-gray-700">
                   {user?.firstName} {user?.lastName}
                 </p>
@@ -98,23 +103,26 @@ const AdminNavbar: React.FC = () => {
               </div>
             </div>
 
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span className="text-sm font-medium">Salir</span>
-            </button>
+            {/* Action Buttons - Más compactos */}
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1 px-2 py-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                title="Cerrar Sesión"
+              >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                <span className="hidden xl:block text-sm font-medium">Salir</span>
+              </button>
 
-            {/* Volver al sitio */}
-            <Link
-              to="/"
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-all duration-200"
-            >
-              <HomeIcon className="h-5 w-5" />
-              <span className="text-sm font-medium">Ver Sitio</span>
-            </Link>
+              <Link
+                to="/"
+                className="flex items-center space-x-1 px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-all duration-200"
+                title="Ver Sitio Web"
+              >
+                <HomeIcon className="h-4 w-4" />
+                <span className="hidden xl:block text-sm font-medium">Sitio</span>
+              </Link>
+            </div>
           </div>
 
           {/* Mobile menu button */}

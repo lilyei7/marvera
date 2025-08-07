@@ -76,6 +76,6 @@ export const requireRole = (roles: string[]) => {
   };
 };
 
-export const requireAdmin = requireRole(['admin']);
-export const requireDriver = requireRole(['driver', 'admin']);
-export const requireCustomer = requireRole(['customer', 'admin']);
+export const requireAdmin = requireRole(['ADMIN', 'SUPER_ADMIN']);
+export const requireDriver = requireRole(['driver', 'ADMIN', 'SUPER_ADMIN']);
+export const requireCustomer = requireRole(['customer', 'ADMIN', 'SUPER_ADMIN']);

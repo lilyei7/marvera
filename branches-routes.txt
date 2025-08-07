@@ -1,0 +1,5 @@
+      'GET /api/admin/users',
+      'GET /api/branches',
+      'POST /api/branches',
+      'PUT /api/branches/:id',
+      'DELETE /api/branches/:id'

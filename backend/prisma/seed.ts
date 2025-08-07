@@ -27,17 +27,20 @@ async function main() {
 
   // Crear usuario admin
   console.log('👤 Creando usuario admin...');
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const hashedPassword = await bcrypt.hash('admin123456', 10);
   await prisma.user.upsert({
     where: { email: 'admin@marvera.com' },
-    update: {},
+    update: {
+      password: hashedPassword,
+      role: 'SUPER_ADMIN'
+    },
     create: {
       email: 'admin@marvera.com',
       firstName: 'Admin',
       lastName: 'MarVera',
       password: hashedPassword,
       phone: '+52 999 123 4567',
-      role: 'admin'
+      role: 'SUPER_ADMIN'
     }
   });
 
@@ -53,7 +56,7 @@ async function main() {
       lastName: 'Prueba',
       password: hashedUserPassword,
       phone: '+52 999 987 6543',
-      role: 'customer'
+      role: 'CUSTOMER'
     }
   });
 

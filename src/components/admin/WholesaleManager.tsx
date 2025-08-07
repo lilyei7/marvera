@@ -76,6 +76,7 @@ const WholesaleManager: React.FC = () => {
   const fetchWholesaleProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch(`${API_BASE_URL}/api/wholesale-products/admin/all`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -85,7 +86,24 @@ const WholesaleManager: React.FC = () => {
       if (!response.ok) throw new Error('Error al cargar productos de mayoreo');
       
       const data = await response.json();
-      setProducts(data);
+      console.log('🏪 Wholesale admin data received:', data);
+      
+      // Proteger contra diferentes formatos de respuesta
+      let productsArray: WholesaleProduct[] = [];
+      
+      if (data && data.success && Array.isArray(data.data)) {
+        productsArray = data.data;
+      } else if (Array.isArray(data)) {
+        productsArray = data;
+      } else if (data && Array.isArray(data.products)) {
+        productsArray = data.products;
+      } else {
+        console.warn('⚠️ Unexpected data format:', data);
+        productsArray = [];
+      }
+      
+      console.log('🏪 Processed wholesale products:', productsArray.length);
+      setProducts(productsArray);
       setError(null);
     } catch (error) {
       console.error('Error al cargar productos de mayoreo:', error);
@@ -102,7 +120,24 @@ const WholesaleManager: React.FC = () => {
       if (!response.ok) throw new Error('Error al cargar categorías');
       
       const data = await response.json();
-      setCategories(data.categories || []);
+      console.log('📂 Categories data received:', data);
+      
+      // Proteger contra diferentes formatos de respuesta
+      let categoriesArray: any[] = [];
+      
+      if (data && data.success && Array.isArray(data.data)) {
+        categoriesArray = data.data;
+      } else if (Array.isArray(data.categories)) {
+        categoriesArray = data.categories;
+      } else if (Array.isArray(data)) {
+        categoriesArray = data;
+      } else {
+        console.warn('⚠️ Unexpected categories format:', data);
+        categoriesArray = [];
+      }
+      
+      console.log('📂 Processed categories:', categoriesArray.length);
+      setCategories(categoriesArray);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
       setCategories([]);

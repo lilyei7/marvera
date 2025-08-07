@@ -129,13 +129,13 @@ router.get('/admin/all', auth.authenticateToken, async (req, res) => {
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        firstName: 'Admin',
+        firstName: 'ADMIN',
         lastName: 'MarVera',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -184,11 +184,11 @@ router.post('/admin/create', auth.authenticateToken, upload.single('image'), asy
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -280,11 +280,11 @@ router.put('/admin/:id', auth.authenticateToken, upload.single('image'), async (
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -401,11 +401,11 @@ router.delete('/admin/:id', auth.authenticateToken, async (req, res) => {
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 

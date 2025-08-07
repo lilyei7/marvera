@@ -50,8 +50,8 @@ const upload = multer({
 // GET /api/admin/products - Obtener todos los productos (solo admin)
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    // Verificar que el usuario sea admin
-    if (req.user?.role !== 'admin') {
+    // Verificar que el usuario sea admin o super admin
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -72,8 +72,8 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
 // POST /api/admin/products - Crear nuevo producto (solo admin)
 router.post('/', authenticateToken, upload.single('image'), async (req: AuthRequest, res) => {
   try {
-    // Verificar que el usuario sea admin
-    if (req.user?.role !== 'admin') {
+    // Verificar que el usuario sea admin o super admin
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -135,8 +135,8 @@ router.post('/', authenticateToken, upload.single('image'), async (req: AuthRequ
 // PUT /api/admin/products/:id - Actualizar producto (solo admin)
 router.put('/:id', authenticateToken, upload.single('image'), async (req: AuthRequest, res) => {
   try {
-    // Verificar que el usuario sea admin
-    if (req.user?.role !== 'admin') {
+    // Verificar que el usuario sea admin o super admin
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -215,8 +215,8 @@ router.put('/:id', authenticateToken, upload.single('image'), async (req: AuthRe
 // DELETE /api/admin/products/:id - Eliminar producto (solo admin)
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    // Verificar que el usuario sea admin
-    if (req.user?.role !== 'admin') {
+    // Verificar que el usuario sea admin o super admin
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 

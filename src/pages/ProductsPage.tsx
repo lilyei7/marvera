@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -16,17 +16,179 @@ import type { Product, ProductCategory } from '../types';
 const ProductsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
-  const productsState = useAppSelector((state) => state.products);
+  const { 
+    filteredItems, 
+    loading, 
+    error, 
+    categories, 
+    selectedCategory, 
+    searchQuery 
+  } = useAppSelector((state) => state.products);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   
-  const filteredItems = (productsState as any)?.filteredItems || [];
-  const loading = (productsState as any)?.loading || false;
-  const error = (productsState as any)?.error || null;
-  const categories = (productsState as any)?.categories || [];
-  const selectedCategory = (productsState as any)?.selectedCategory || 'all';
-  const searchQuery = (productsState as any)?.searchQuery || '';
+  // EMERGENCY BYPASS: Direct fetch to avoid Redux corruption
+  const [directProducts, setDirectProducts] = useState<any[]>([]);
+  const [directLoading, setDirectLoading] = useState(false);
+  const [directError, setDirectError] = useState<string | null>(null);
+  
+  // Direct fetch function
+  const fetchProductsDirectly = async () => {
+    try {
+      setDirectLoading(true);
+      setDirectError(null);
+      console.log('🚨 EMERGENCY BYPASS: Fetching products directly');
+      
+      const response = await fetch('https://marvera.mx/api/products');
+      const data = await response.json();
+      
+      console.log('📦 DIRECT API RESPONSE:', data);
+      
+      if (data.success && Array.isArray(data.data)) {
+        const processedProducts = data.data.map((product: any, index: number) => ({
+          id: product.id?.toString() || `direct-${index}`,
+          name: product.name || 'Producto sin nombre',
+          description: product.description || '',
+          price: product.price || 0,
+          category: product.category || 'otros',
+          imageUrl: product.imageUrl || product.image || '',
+          inStock: (product.stock || 0) > 0,
+          origin: product.origin || 'MarVera',
+          freshness: product.freshness || 'Fresh',
+          weight: product.weight || 1,
+          unit: product.unit || 'kg',
+          isFeatured: product.isFeatured === true || product.isFeatured === 1,
+          images: product.images || [],
+          stock: product.stock || 0,
+          categoryName: product.category || product.categoryName || 'Otros'
+        }));
+        
+        console.log('✅ DIRECT PRODUCTS PROCESSED:', processedProducts.length);
+        setDirectProducts(processedProducts);
+      } else {
+        throw new Error('Invalid API response structure');
+      }
+    } catch (error) {
+      console.error('❌ DIRECT FETCH ERROR:', error);
+      setDirectError('Error al cargar productos directamente');
+    } finally {
+      setDirectLoading(false);
+    }
+  };
+  
+  // Try direct fetch if Redux seems to be failing
+  useEffect(() => {
+    if (!loading && (!Array.isArray(filteredItems) || filteredItems.length === 0)) {
+      console.log('🔄 REDUX APPEARS TO BE FAILING: Trying direct fetch');
+      fetchProductsDirectly();
+    }
+  }, [loading, filteredItems]);
+  
+  // Choose data source: Redux if working, direct if not
+  const finalProducts = useMemo(() => {
+    if (Array.isArray(filteredItems) && filteredItems.length > 0) {
+      console.log('✅ USING REDUX DATA:', filteredItems.length, 'products');
+      return filteredItems;
+    } else if (Array.isArray(directProducts) && directProducts.length > 0) {
+      console.log('✅ USING DIRECT FETCH DATA:', directProducts.length, 'products');
+      return directProducts;
+    } else {
+      console.log('⚠️ NO PRODUCTS AVAILABLE FROM ANY SOURCE');
+      return [];
+    }
+  }, [filteredItems, directProducts]);
+  
+  const finalLoading = loading || directLoading;
+  const finalError = error || directError;
+  
+  // ULTRA DEFENSIVE: Multiple layers of array validation
+  console.log('🔍 ProductsPage - filteredItems del store:', filteredItems);
+  console.log('🔍 ProductsPage - Es array?', Array.isArray(filteredItems));
+  console.log('🔍 ProductsPage - Type:', typeof filteredItems);
+  console.log('🔍 ProductsPage - Loading state:', loading);
+  
+  // STEP 1: Basic null/undefined check
+  const rawFilteredItems: any = filteredItems || [];
+  console.log('🔍 Step 1 - rawFilteredItems:', rawFilteredItems);
+  
+  // STEP 2: Array validation with reconstruction if needed
+  let validatedFilteredItems: any[] = [];
+  if (Array.isArray(rawFilteredItems)) {
+    validatedFilteredItems = rawFilteredItems;
+  } else if (rawFilteredItems && typeof rawFilteredItems === 'object') {
+    // Try to extract array from object if wrapped
+    if (rawFilteredItems.data && Array.isArray(rawFilteredItems.data)) {
+      validatedFilteredItems = rawFilteredItems.data;
+    } else if (rawFilteredItems.items && Array.isArray(rawFilteredItems.items)) {
+      validatedFilteredItems = rawFilteredItems.items;
+    } else {
+      // Convert to array if it's an object with numeric keys
+      const keys = Object.keys(rawFilteredItems);
+      if (keys.length > 0 && keys.every(k => !isNaN(Number(k)))) {
+        validatedFilteredItems = Object.values(rawFilteredItems);
+      } else {
+        validatedFilteredItems = [];
+      }
+    }
+  } else {
+    validatedFilteredItems = [];
+  }
+  
+  // STEP 3: Final safety wrapper with forced array creation
+  const safeFilteredItems = Array.isArray(validatedFilteredItems) ? [...validatedFilteredItems] : [];
+  
+  console.log('🔍 Step 2 - validatedFilteredItems:', validatedFilteredItems);
+  console.log('🔍 Step 3 - safeFilteredItems:', safeFilteredItems);
+  console.log('🔍 Final - safeFilteredItems length:', safeFilteredItems.length);
+  console.log('🔍 Final - safeFilteredItems is Array?', Array.isArray(safeFilteredItems));
+  
+  // Same process for categories with explicit typing
+  const rawCategories: any = categories || [];
+  const validatedCategories = Array.isArray(rawCategories) ? rawCategories : [];
+  const safeCategories = Array.isArray(validatedCategories) ? [...validatedCategories] : [];
+  
+  console.log('🔍 Categories - safeCategories length:', safeCategories.length);
+  console.log('🔍 Categories - safeCategories is Array?', Array.isArray(safeCategories));
+  
+  // Additional safety: Ensure both are arrays before render
+  if (!Array.isArray(safeFilteredItems)) {
+    console.error('❌ safeFilteredItems no es array:', safeFilteredItems);
+    return (
+      <div className="min-h-screen bg-light flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🐟</div>
+          <p className="text-red-600 font-medium mb-2">Error en datos de productos</p>
+          <p className="text-gray-500">Los datos no tienen el formato correcto</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!Array.isArray(safeCategories)) {
+    console.error('❌ safeCategories no es array:', safeCategories);
+    return (
+      <div className="min-h-screen bg-light flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🐟</div>
+          <p className="text-red-600 font-medium mb-2">Error en datos de categorías</p>
+          <p className="text-gray-500">Los datos no tienen el formato correcto</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Early return if we're still loading
+  if (finalLoading) {
+    return (
+      <div className="min-h-screen bg-light flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-primary font-medium">Cargando productos frescos...</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -94,7 +256,7 @@ const ProductsPage: React.FC = () => {
     otros: 'Otros'
   };
 
-  if (loading) {
+  if (finalLoading) {
     return (
       <div className="min-h-screen bg-light flex items-center justify-center">
         <div className="text-center">
@@ -105,13 +267,13 @@ const ProductsPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (finalError) {
     return (
       <div className="min-h-screen bg-light flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🐟</div>
           <p className="text-red-600 font-medium mb-2">Error al cargar productos</p>
-          <p className="text-gray-500">{error}</p>
+          <p className="text-gray-500">{finalError}</p>
         </div>
       </div>
     );
@@ -134,8 +296,8 @@ const ProductsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <p className="text-blue-800 text-sm">
                 🔍 Mostrando resultados para: <span className="font-semibold">"{searchQuery}"</span>
-                {filteredItems.length > 0 && (
-                  <span className="ml-2 text-blue-600">({filteredItems.length} productos encontrados)</span>
+                {finalProducts.length > 0 && (
+                  <span className="ml-2 text-blue-600">({finalProducts.length} productos encontrados)</span>
                 )}
               </p>
               <button
@@ -224,7 +386,7 @@ const ProductsPage: React.FC = () => {
                   >
                     {categoryLabels.all}
                   </button>
-                  {categories.map((category: ProductCategory) => (
+                  {safeCategories.map((category: ProductCategory) => (
                     <button
                       key={category}
                       onClick={() => handleCategoryChange(category)}
@@ -244,7 +406,7 @@ const ProductsPage: React.FC = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {filteredItems.length === 0 ? (
+            {finalProducts.length === 0 ? (
               <div className="text-center py-8 sm:py-12">
                 <div className="text-4xl sm:text-5xl md:text-6xl mb-2 sm:mb-4">🦐</div>
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">
@@ -256,14 +418,73 @@ const ProductsPage: React.FC = () => {
               </div>
             ) : (
               <div className="products-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8 px-2 sm:px-0">
-                {filteredItems.map((product: any) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                    onClick={handleProductClick}
-                  />
-                ))}
+                {(() => {
+                  console.log('🔄 Iniciando render de productos...');
+                  console.log('🔄 safeFilteredItems antes del map:', safeFilteredItems);
+                  console.log('🔄 Tipo de safeFilteredItems:', typeof safeFilteredItems);
+                  console.log('🔄 Es array?:', Array.isArray(safeFilteredItems));
+                  console.log('🔄 Longitud:', safeFilteredItems?.length);
+                  
+                  if (!Array.isArray(safeFilteredItems)) {
+                    console.error('❌ NO ES ARRAY en render!');
+                    return (
+                      <div className="col-span-full text-center py-12">
+                        <div className="text-6xl mb-4">⚠️</div>
+                        <p className="text-red-500 text-lg mb-2">Error: Datos no son array</p>
+                      </div>
+                    );
+                  }
+                  
+                  if (safeFilteredItems.length === 0) {
+                    return (
+                      <div className="col-span-full text-center py-12">
+                        <div className="text-6xl mb-4">🐟</div>
+                        <p className="text-gray-500 text-lg mb-2">No se encontraron productos</p>
+                        <p className="text-gray-400">Intenta cambiar los filtros o buscar algo diferente</p>
+                      </div>
+                    );
+                  }
+                  
+                  try {
+                    // FINAL VALIDATION: Ensure we have a proper array with map function
+                    if (!finalProducts || typeof finalProducts.map !== 'function') {
+                      console.error('❌ finalProducts no tiene función map:', finalProducts);
+                      throw new Error('Array corruption detected - no map function available');
+                    }
+                    
+                    console.log('✅ Pre-map validation passed. Array length:', finalProducts.length);
+                    console.log('✅ Array.isArray check:', Array.isArray(finalProducts));
+                    console.log('✅ Has map function:', typeof finalProducts.map === 'function');
+                    
+                    return finalProducts.map((product: any, index: number) => {
+                      console.log(`🔄 Renderizando producto ${index}:`, product);
+                      
+                      // Extra safety check for each product
+                      if (!product || typeof product !== 'object') {
+                        console.warn(`⚠️ Producto inválido en índice ${index}:`, product);
+                        return null;
+                      }
+                      
+                      return (
+                        <ProductCard
+                          key={product.id || `product-${index}`}
+                          product={product}
+                          onAddToCart={handleAddToCart}
+                          onClick={handleProductClick}
+                        />
+                      );
+                    });
+                  } catch (error) {
+                    console.error('❌ Error en map de productos:', error);
+                    return (
+                      <div className="col-span-full text-center py-12">
+                        <div className="text-6xl mb-4">�</div>
+                        <p className="text-red-500 text-lg mb-2">Error al renderizar productos</p>
+                        <p className="text-gray-400">Error: {String(error)}</p>
+                      </div>
+                    );
+                  }
+                })()}
               </div>
             )}
           </div>
@@ -313,7 +534,7 @@ const ProductsPage: React.FC = () => {
                   >
                     {categoryLabels.all}
                   </button>
-                  {categories.map((category: ProductCategory) => (
+                  {safeCategories.map((category: ProductCategory) => (
                     <button
                       key={category}
                       onClick={() => handleCategoryChange(category)}

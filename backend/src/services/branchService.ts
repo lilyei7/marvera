@@ -75,13 +75,22 @@ export class BranchService {
     });
   }
 
-  // Buscar sucursales por ciudad
-  static async getBranchesByCity(city: string): Promise<Branch[]> {
+  // Buscar sucursales por nombre o dirección
+  static async searchBranches(query: string): Promise<Branch[]> {
     return prisma.branch.findMany({
       where: {
-        city: {
-          contains: city
-        },
+        OR: [
+          {
+            name: {
+              contains: query
+            }
+          },
+          {
+            address: {
+              contains: query
+            }
+          }
+        ],
         isActive: true
       },
       orderBy: { name: 'asc' }

@@ -1,7 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { API_CONFIG } from '../config/api';
 import type { Product } from '../types';
-
-const API_BASE_URL = '/api';
 
 interface CreateProductRequest {
   name: string;
@@ -20,7 +19,7 @@ interface CreateProductRequest {
 export const adminProductsApi = createApi({
   reducerPath: 'adminProductsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/admin/products`,
+    baseUrl: API_CONFIG.ENDPOINTS.ADMIN_PRODUCTS,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('authToken');
       if (token) {

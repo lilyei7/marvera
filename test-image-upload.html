@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Image Upload - MarVera</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        form {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .preview {
+            margin-top: 10px;
+            max-width: 200px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prueba de Subida de Imágenes - Sucursales MarVera</h1>
+    
+    <form id="branchForm" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="name">Nombre de la Sucursal:</label>
+            <input type="text" id="name" name="name" required placeholder="Ej: MarVera Prueba">
+        </div>
+        
+        <div class="form-group">
+            <label for="address">Dirección:</label>
+            <textarea id="address" name="address" placeholder="Dirección completa"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Teléfono:</label>
+            <input type="tel" id="phone" name="phone" placeholder="+52 55 1234 5678">
+        </div>
+        
+        <div class="form-group">
+            <label for="image">Imagen de la Sucursal:</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            <img id="imagePreview" class="preview" style="display: none;">
+        </div>
+        
+        <div class="form-group">
+            <label for="latitude">Latitud:</label>
+            <input type="number" id="latitude" name="latitude" step="any" placeholder="19.4326">
+        </div>
+        
+        <div class="form-group">
+            <label for="longitude">Longitud:</label>
+            <input type="number" id="longitude" name="longitude" step="any" placeholder="-99.1332">
+        </div>
+        
+        <div class="form-group">
+            <label for="openingHours">Horarios:</label>
+            <input type="text" id="openingHours" name="openingHours" placeholder="9:00 AM - 8:00 PM">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="isActive" name="isActive" checked>
+                Sucursal activa
+            </label>
+        </div>
+        
+        <button type="submit">Crear Sucursal con Imagen</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+        // Preview image
+        document.getElementById('image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('branchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const name = document.getElementById('name').value;
+            const address = document.getElementById('address').value;
+            const phone = document.getElementById('phone').value;
+            const image = document.getElementById('image').files[0];
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const openingHours = document.getElementById('openingHours').value;
+            const isActive = document.getElementById('isActive').checked;
+            
+            // Add all form fields to FormData
+            formData.append('name', name);
+            if (address) formData.append('address', address);
+            if (phone) formData.append('phone', phone);
+            if (latitude) formData.append('latitude', latitude);
+            if (longitude) formData.append('longitude', longitude);
+            if (openingHours) formData.append('openingHours', openingHours);
+            formData.append('isActive', isActive);
+            
+            // Add image if selected
+            if (image) {
+                formData.append('image', image);
+            }
+            
+            try {
+                const response = await fetch('https://marvera.mx/api/branches', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ Sucursal creada exitosamente!</h3>
+                            <p><strong>ID:</strong> ${result.data.id}</p>
+                            <p><strong>Nombre:</strong> ${result.data.name}</p>
+                            ${result.data.imageUrl ? `<p><strong>Imagen:</strong> <a href="${result.data.imageUrl}" target="_blank">Ver imagen</a></p>` : ''}
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ Error al crear sucursal</h3>
+                            <p>${result.message || 'Error desconocido'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Error de conexión</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

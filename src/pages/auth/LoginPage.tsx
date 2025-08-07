@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { API_ROUTES, buildApiUrl, FRONTEND_ROUTES } from '../../config/routes';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('https://marvera.mx/api/auth/login', {
+      const response = await fetch(buildApiUrl(API_ROUTES.AUTH.LOGIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,9 +49,9 @@ const LoginPage: React.FC = () => {
 
       // Redirigir según el rol
       if (['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(data.user.role)) {
-        navigate('/admin');
+        navigate(FRONTEND_ROUTES.ADMIN.DASHBOARD);
       } else {
-        navigate('/profile');
+        navigate(FRONTEND_ROUTES.AUTH.PROFILE);
       }
     } catch (error: any) {
       setError(error.message);

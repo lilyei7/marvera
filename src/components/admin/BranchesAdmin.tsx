@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { fetchBranches, createBranch, updateBranch, deleteBranch, type Branch } from '../../store/slices/branchSlice';
+import { fetchBranches, updateBranch, deleteBranch, type Branch } from '../../store/slices/branchSlice';
 import AdminLayout from '../../layouts/AdminLayout';
 import { 
   PlusIcon, 
@@ -25,8 +25,18 @@ const BranchesAdmin: React.FC = () => {
   const dispatch = useAppDispatch();
   const { branches, loading, error } = useAppSelector((state) => state.branches);
   
+  // Debug logs
+  console.log('🔍 [BranchesAdmin] Current state:', { 
+    branchesCount: branches.length, 
+    loading, 
+    error,
+    branchesData: branches 
+  });
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState<BranchFormData>({
     name: '',
     address: '',
@@ -46,12 +56,38 @@ const BranchesAdmin: React.FC = () => {
     e.preventDefault();
     
     try {
+      const formDataToSend = new FormData();
+      
+      // Add all form fields
+      formDataToSend.append('name', formData.name);
+      if (formData.address) formDataToSend.append('address', formData.address);
+      if (formData.phone) formDataToSend.append('phone', formData.phone);
+      if (formData.latitude) formDataToSend.append('latitude', formData.latitude.toString());
+      if (formData.longitude) formDataToSend.append('longitude', formData.longitude.toString());
+      formDataToSend.append('isActive', formData.isActive.toString());
+      if (formData.openingHours) formDataToSend.append('openingHours', formData.openingHours);
+      
+      // Add image file if selected
+      if (imageFile) {
+        formDataToSend.append('image', imageFile);
+      }
+      
       if (editingBranch) {
+        // For updates, we'll need to handle this differently since Redux might not support FormData
         await dispatch(updateBranch({ id: editingBranch.id, ...formData }));
         console.log('✅ Sucursal actualizada');
       } else {
-        await dispatch(createBranch(formData));
-        console.log('✅ Sucursal creada');
+        // For new branches, create using FormData directly with API call
+        const response = await fetch('https://marvera.mx/api/branches', {
+          method: 'POST',
+          body: formDataToSend,
+        });
+        
+        if (response.ok) {
+          console.log('✅ Sucursal creada con imagen');
+        } else {
+          throw new Error('Error creating branch with image');
+        }
       }
       
       handleCloseModal();
@@ -61,17 +97,64 @@ const BranchesAdmin: React.FC = () => {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen válido');
+        return;
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 5MB permitido');
+        return;
+      }
+      
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    // Reset file input
+    const fileInput = document.getElementById('branch-image') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleEdit = (branch: Branch) => {
     setEditingBranch(branch);
     setFormData({
       name: branch.name,
       address: branch.address || '',
       phone: branch.phone || '',
-      latitude: branch.latitude || 0,
-      longitude: branch.longitude || 0,
-      isActive: branch.isActive,
-      openingHours: branch.openingHours || '9:00 AM - 8:00 PM'
+      latitude: branch.coordinates?.lat || branch.latitude || 0,
+      longitude: branch.coordinates?.lng || branch.longitude || 0,
+      isActive: branch.isActive ?? true,
+      openingHours: branch.openingHours || (branch.operatingHours?.monday ? 
+        `${branch.operatingHours.monday.open} - ${branch.operatingHours.monday.close}` : 
+        '9:00 AM - 8:00 PM')
     });
+    
+    // Set existing image preview if available
+    if (branch.imageUrl) {
+      setImagePreview(branch.imageUrl);
+    } else {
+      setImagePreview(null);
+    }
+    setImageFile(null); // Reset file input for editing
+    
     setIsModalOpen(true);
   };
 
@@ -90,6 +173,8 @@ const BranchesAdmin: React.FC = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingBranch(null);
+    setImageFile(null);
+    setImagePreview(null);
     setFormData({
       name: '',
       address: '',
@@ -166,6 +251,21 @@ const BranchesAdmin: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {branches.map((branch: Branch) => (
             <div key={branch.id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+              {/* Branch Image */}
+              {branch.imageUrl && (
+                <div className="h-48 w-full overflow-hidden">
+                  <img 
+                    src={branch.imageUrl} 
+                    alt={branch.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Hide image if it fails to load
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-gray-900">{branch.name}</h3>
@@ -186,10 +286,13 @@ const BranchesAdmin: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {branch.address && (
+                  {(branch.address || branch.city) && (
                     <div className="flex items-center text-gray-600">
                       <MapPinIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                      <span className="text-sm">{branch.address}</span>
+                      <span className="text-sm">
+                        {branch.address ? branch.address : 
+                         branch.city ? `${branch.city}${branch.state ? `, ${branch.state}` : ''}` : 'Sin dirección'}
+                      </span>
                     </div>
                   )}
                   
@@ -200,14 +303,31 @@ const BranchesAdmin: React.FC = () => {
                     </div>
                   )}
                   
-                  {branch.openingHours && (
+                  {(branch.openingHours || (branch.operatingHours?.monday)) && (
                     <div className="flex items-center text-gray-600">
                       <ClockIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                      <span className="text-sm">{branch.openingHours}</span>
+                      <span className="text-sm">
+                        {branch.openingHours || 
+                         (branch.operatingHours?.monday ? 
+                          `${branch.operatingHours.monday.open} - ${branch.operatingHours.monday.close}` : 
+                          'Horario no disponible')}
+                      </span>
                     </div>
                   )}
 
-                  {!branch.address && !branch.phone && !branch.openingHours && (
+                  {branch.email && (
+                    <div className="flex items-center text-gray-600">
+                      <span className="text-sm">📧 {branch.email}</span>
+                    </div>
+                  )}
+
+                  {branch.manager && (
+                    <div className="flex items-center text-gray-600">
+                      <span className="text-sm">👤 {branch.manager}</span>
+                    </div>
+                  )}
+
+                  {!branch.address && !branch.city && !branch.phone && !branch.openingHours && !branch.operatingHours && (
                     <div className="text-gray-400 text-sm italic">
                       Información de contacto no disponible
                     </div>
@@ -217,11 +337,11 @@ const BranchesAdmin: React.FC = () => {
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <div className="flex justify-between items-center">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      branch.isActive 
+                      (branch.isActive ?? true) 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {branch.isActive ? 'Activa' : 'Inactiva'}
+                      {(branch.isActive ?? true) ? 'Activa' : 'Inactiva'}
                     </span>
                     <div className="text-xs text-gray-500">
                       ID: {branch.id}
@@ -257,6 +377,43 @@ const BranchesAdmin: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Ej: MarVera Centro"
                   />
+                </div>
+
+                {/* Image Upload Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Imagen de la Sucursal <span className="text-gray-400">(opcional)</span>
+                  </label>
+                  
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="mb-3 relative">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* File Input */}
+                  <input
+                    type="file"
+                    id="branch-image"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB
+                  </p>
                 </div>
 
                 <div>

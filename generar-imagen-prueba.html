@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar Imagen de Prueba - MarVera</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generar Imagen de Prueba para Sucursal</h1>
+    <p>Crea una imagen de prueba para probar la funcionalidad de upload de sucursales.</p>
+    
+    <canvas id="canvas" width="400" height="300"></canvas>
+    
+    <div>
+        <button onclick="generateImage()">Generar Nueva Imagen</button>
+        <button onclick="downloadImage()">Descargar Imagen</button>
+    </div>
+    
+    <div id="info"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function generateImage() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Random gradient background
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, `hsl(${Math.random() * 360}, 70%, 80%)`);
+            gradient.addColorStop(1, `hsl(${Math.random() * 360}, 70%, 60%)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add MarVera text
+            ctx.fillStyle = '#1E3A8A';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('MarVera', canvas.width / 2, 80);
+            
+            // Add Sucursal text
+            ctx.font = '24px Arial';
+            ctx.fillText('Sucursal de Prueba', canvas.width / 2, 120);
+            
+            // Add timestamp
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#333';
+            const now = new Date();
+            ctx.fillText(now.toLocaleString(), canvas.width / 2, 160);
+            
+            // Add some decorative elements
+            ctx.fillStyle = '#40E0D0';
+            ctx.beginPath();
+            ctx.arc(100, 220, 30, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = '#87CEEB';
+            ctx.beginPath();
+            ctx.arc(300, 220, 25, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Add random ID
+            const randomId = Math.floor(Math.random() * 1000);
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`ID: ${randomId}`, canvas.width / 2, 280);
+            
+            document.getElementById('info').innerHTML = `
+                <p><strong>Imagen generada:</strong> ${canvas.width}x${canvas.height} píxeles</p>
+                <p><strong>Formato:</strong> PNG</p>
+                <p><strong>Uso:</strong> Imagen de prueba para sucursal MarVera</p>
+            `;
+        }
+        
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = `marvera-sucursal-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate initial image
+        generateImage();
+    </script>
+</body>
+</html>

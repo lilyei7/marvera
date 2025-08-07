@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
+import { getApiUrl, API_CONFIG } from '../../config/api';
 
 import type { AuthState, LoginRequest, RegisterRequest } from '../../types';
 
@@ -8,7 +8,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: RegisterRequest, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_REGISTER), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export const verifyToken = createAsyncThunk(
         controller.abort();
       }, 10000); // 10 segundos timeout
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_VERIFY), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -134,7 +134,7 @@ export const logoutUser = createAsyncThunk(
       const token = localStorage.getItem('token');
       
       if (token) {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH_LOGOUT), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -151,11 +151,36 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+const getUserFromStorage = () => {
+  try {
+    const userData = sessionStorage.getItem('marvera_user');
+    return userData ? JSON.parse(userData) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveUserToStorage = (user: any) => {
+  try {
+    sessionStorage.setItem('marvera_user', JSON.stringify(user));
+  } catch {
+    // Ignorar errores de storage
+  }
+};
+
+const clearUserFromStorage = () => {
+  try {
+    sessionStorage.removeItem('marvera_user');
+  } catch {
+    // Ignorar errores de storage
+  }
+};
+
 const initialState: AuthState = {
-  user: null,
+  user: getUserFromStorage(),
   token: localStorage.getItem('token'),
-  isAuthenticated: false,
-  isLoading: false,
+  isAuthenticated: !!getUserFromStorage() && !!localStorage.getItem('token'),
+  isLoading: false, // No iniciar cargando
   error: null,
 };
 
@@ -172,6 +197,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       localStorage.removeItem('token');
+      clearUserFromStorage(); // Limpiar usuario de storage
     },
   },
   extraReducers: (builder) => {
@@ -187,6 +213,7 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        saveUserToStorage(action.payload.user); // Persistir usuario
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -228,6 +255,7 @@ const authSlice = createSlice({
         state.token = action.payload.token || state.token;
         state.isAuthenticated = true;
         state.error = null;
+        saveUserToStorage(action.payload.user); // Persistir usuario
       })
       .addCase(verifyToken.rejected, (state, action) => {
         console.log('❌ [Redux] verifyToken.rejected:', action.payload);
@@ -236,6 +264,7 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.error = null;
+        clearUserFromStorage(); // Limpiar usuario de storage
       });
 
     // Logout
@@ -245,6 +274,7 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.error = null;
+        clearUserFromStorage(); // Limpiar usuario de storage
       });
   },
 });

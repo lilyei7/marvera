@@ -246,7 +246,71 @@ async function main() {
       }
     }
 
-    console.log('🎉 Seed completado exitosamente!');
+    // 6. Crear Ofertas Especiales
+    console.log('� Creando ofertas especiales...');
+    
+    const specialOffers = [
+      {
+        title: 'Banquete de Mariscos 🍤',
+        description: 'Selección especial para 4 personas - Camarones jumbo, langostinos y pulpo',
+        originalPrice: 159.99,
+        discountPrice: 119.99,
+        discountPercent: 25,
+        imageUrl: '/images/offers/banquete-mariscos.jpg',
+        backgroundColor: '#40E0D0', // Turquoise
+        isActive: true,
+        isFeatured: true,
+        validFrom: new Date(),
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
+        productIds: JSON.stringify([2, 3]), // Camarón y otros
+        maxRedemptions: 100
+      },
+      {
+        title: 'Combo Sushi Premium 🍣',
+        description: 'Salmón, atún y pescados selectos para sushi y sashimi',
+        originalPrice: 89.99,
+        discountPrice: 69.99,
+        discountPercent: 22,
+        imageUrl: '/images/offers/combo-sushi.jpg',
+        backgroundColor: '#1E3A8A', // Marina Blue
+        isActive: true,
+        isFeatured: true,
+        validFrom: new Date(),
+        validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 días
+        productIds: JSON.stringify([1, 3]), // Salmón y Atún
+        maxRedemptions: 50
+      },
+      {
+        title: 'Paquete Familia Marina 🐟',
+        description: 'Kit completo de pescados frescos para 6 personas',
+        originalPrice: 199.99,
+        discountPrice: 149.99,
+        discountPercent: 25,
+        imageUrl: '/images/offers/paquete-familia.jpg',
+        backgroundColor: '#87CEEB', // Light Blue
+        isActive: true,
+        isFeatured: false,
+        validFrom: new Date(),
+        validUntil: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 días
+        productIds: JSON.stringify([1, 2, 3]), // Todos los productos
+        maxRedemptions: 75
+      }
+    ];
+
+    for (const offerData of specialOffers) {
+      const existing = await prisma.specialOffer.findFirst({
+        where: { title: offerData.title }
+      });
+      
+      if (!existing) {
+        const offer = await prisma.specialOffer.create({
+          data: offerData
+        });
+        console.log('✅ Oferta especial creada:', offer.title);
+      }
+    }
+
+    console.log('�🎉 Seed completado exitosamente!');
     console.log('');
     console.log('👤 Usuarios creados:');
     console.log('  📧 admin@marvera.com (password: admin123456) - SUPER_ADMIN');
@@ -259,6 +323,7 @@ async function main() {
     console.log('🏷️ Categorías: Pescados, Mariscos, Moluscos, Conservas');
     console.log('🐟 Productos: Salmón, Camarón Jumbo, Atún Aleta Azul');
     console.log('📦 Mayoreo: Camarón Mediano, Pulpo Entero');
+    console.log('🎁 Ofertas Especiales: Banquete de Mariscos, Combo Sushi Premium, Paquete Familia Marina');
 
   } catch (error) {
     console.error('❌ Error durante el seed:', error);

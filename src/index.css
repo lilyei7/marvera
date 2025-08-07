@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@import "./styles/scrollbar.css";
+@import "./styles/touch.css";
+@import "./styles/navigation-effects.css";
 
 /* Custom CSS variables para la nueva paleta de colores MarVera */
 :root {

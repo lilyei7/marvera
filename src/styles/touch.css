@@ -1,0 +1,137 @@
+/* Touch optimizations for mobile devices */
+
+/* Elimininar highlight de toque en WebKit */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mejorar experiencia táctil en botones */
+.touch-button {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Optimización para zoom en formularios móviles */
+input, textarea, select {
+  font-size: 16px; /* Previene zoom automático en iOS */
+}
+
+/* Smooth scrolling para navegación táctil */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Mejor feedback táctil para cards de productos */
+.product-card-touch {
+  cursor: pointer;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+}
+
+.product-card-touch:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Optimización de imágenes para pantallas táctiles */
+.touch-image {
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* Mejorar área táctil para controles pequeños */
+.touch-target {
+  min-height: 44px; /* Recomendación de Apple para área táctil mínima */
+  min-width: 44px;
+}
+
+/* Optimización para swipe en galerías */
+.swipe-container {
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimización específica para swipe de imágenes */
+.image-swipe {
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Indicador visual de que se puede hacer swipe */
+.swipeable {
+  position: relative;
+}
+
+.swipeable::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  width: 4px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.swipeable::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 4px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.swipeable:hover::before,
+.swipeable:hover::after {
+  opacity: 1;
+}
+
+/* Disable zoom en doble tap */
+.no-zoom {
+  touch-action: manipulation;
+}
+
+/* Optimización de rendimiento para animaciones en móvil */
+.smooth-transform {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Responsive touch targets para diferentes tamaños de pantalla */
+@media (max-width: 640px) {
+  .mobile-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 475px) {
+  .mobile-touch-target {
+    min-height: 52px;
+    min-width: 52px;
+    padding: 14px;
+  }
+}

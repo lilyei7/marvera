@@ -11,10 +11,14 @@ import { AuthService } from './services/authService';
 // Importar rutas
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
+import categoriesRoutes from './routes/categories';
 import orderRoutes from './routes/orders';
 import uploadRoutes from './routes/upload';
 import branchRoutes from './routes/api/branches';
 import adminProductRoutes from './routes/adminProducts';
+import adminUserRoutes from './routes/adminUsers';
+import offersRoutes from './routes/offers';
+import slideshowRoutes from './routes/slideshow';
 const wholesaleProductRoutes = require('../routes/wholesaleProducts');
 
 const app = express();
@@ -22,10 +26,10 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
-      "https://marvera.mx",
-      "https://www.marvera.mx",
+      "https://www.marvera.mx", // ✅ PRINCIPAL
+      "https://marvera.mx",     // ✅ SECUNDARIO
+      "http://www.marvera.mx",  // ✅ DESARROLLO
       "http://marvera.mx", 
-      "http://www.marvera.mx",
       "http://localhost:5173",
       "http://localhost:5174"
     ],
@@ -34,7 +38,7 @@ const io = new Server(server, {
   }
 });
 
-const PORT = process.env.PORT || 3001; // Server restart
+const PORT = process.env.PORT || 3001; // 🔧 PUERTO UNIFICADO: 3001
 
 // Middleware de seguridad
 app.use(helmet({
@@ -73,10 +77,10 @@ if (process.env.NODE_ENV === 'production') {
 // CORS
 app.use(cors({
   origin: [
-    'https://marvera.mx',
-    'https://www.marvera.mx',
+    'https://www.marvera.mx', // ✅ PRINCIPAL
+    'https://marvera.mx',     // ✅ SECUNDARIO  
+    'http://www.marvera.mx',  // ✅ DESARROLLO
     'http://marvera.mx',
-    'http://www.marvera.mx',
     'http://localhost:5173',
     'http://localhost:5174'
   ],
@@ -108,11 +112,15 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/categories', categoriesRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/wholesale-products', wholesaleProductRoutes);
+app.use('/api/offers', offersRoutes);
+app.use('/api/slideshow', slideshowRoutes);
 
 // Ruta de health check
 app.get('/api/health', (req, res) => {
@@ -201,7 +209,7 @@ app.use((req, res) => {
 server.listen(PORT, async () => {
   console.log(`🚀 Servidor MarVera corriendo en puerto ${PORT} en todas las interfaces`);
   console.log(`📊 API disponible en http://localhost:${PORT}/api`);
-  console.log(`🌐 API disponible externamente en https://marvera.mx/api`);
+  console.log(`🌐 API disponible externamente en https://www.marvera.mx/api`);
   console.log(`🔌 Socket.IO habilitado para tracking en tiempo real`);
   console.log(`💾 Prisma conectado a la base de datos SQLite`);
   

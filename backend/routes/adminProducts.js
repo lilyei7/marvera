@@ -8,16 +8,21 @@ const auth = require('../src/middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Crear directorio de uploads si no existe
+// Crear directorios de uploads si no existen
 const uploadsDir = path.join(__dirname, '../uploads');
+const productsDir = path.join(uploadsDir, 'products');
+
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+if (!fs.existsSync(productsDir)) {
+  fs.mkdirSync(productsDir, { recursive: true });
+}
 
-// Configuración de multer para subida de imágenes
+// Configuración de multer para subida de imágenes de productos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, productsDir); // Usar directorio específico para productos
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -28,7 +33,8 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit per file
+    files: 7 // Maximum 7 files
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -66,13 +72,13 @@ router.get('/', auth.authenticateToken, async (req, res) => {
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        firstName: 'Admin',
+        firstName: 'ADMIN',
         lastName: 'MarVera',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -94,7 +100,16 @@ router.get('/', auth.authenticateToken, async (req, res) => {
       category: product.category.name,
       unit: product.unit,
       inStock: product.stock > 0,
-      imageUrl: product.images || null,
+      imageUrl: product.images ? (
+        // Intentar parsear JSON, si falla asumir string (compatibilidad con formato anterior)
+        (() => {
+          try {
+            return JSON.parse(product.images);
+          } catch (e) {
+            return [product.images]; // Convertir string a array
+          }
+        })()
+      ) : [],
       isFeatured: product.isFeatured,
       stock: product.stock
     }));
@@ -108,7 +123,7 @@ router.get('/', auth.authenticateToken, async (req, res) => {
 });
 
 // POST /api/admin/products - Crear nuevo producto (solo admin)
-router.post('/', auth.authenticateToken, upload.single('image'), async (req, res) => {
+router.post('/', auth.authenticateToken, upload.array('images', 7), async (req, res) => {
   try {
     // Verificar req.user y que sea admin
     if (!req.user) {
@@ -116,11 +131,11 @@ router.post('/', auth.authenticateToken, upload.single('image'), async (req, res
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -141,25 +156,45 @@ router.post('/', auth.authenticateToken, upload.single('image'), async (req, res
       });
     }
 
-    // Buscar o crear categoría
+    // Buscar categoría existente por nombre o slug
+    const categorySlug = createSlug(category);
     let categoryRecord = await prisma.category.findFirst({
-      where: { name: category }
+      where: {
+        OR: [
+          { name: { equals: category, mode: 'insensitive' } },
+          { slug: categorySlug }
+        ]
+      }
     });
 
     if (!categoryRecord) {
-      categoryRecord = await prisma.category.create({
-        data: {
-          name: category,
-          slug: createSlug(category)
+      // Solo crear si realmente no existe
+      try {
+        categoryRecord = await prisma.category.create({
+          data: {
+            name: category,
+            slug: categorySlug
+          }
+        });
+      } catch (createError) {
+        // Si falla por slug duplicado, buscar por slug
+        if (createError.code === 'P2002') {
+          categoryRecord = await prisma.category.findFirst({
+            where: { slug: categorySlug }
+          });
+        } else {
+          throw createError;
         }
-      });
+      }
     }
 
-    // Construir URL de imagen si se subió archivo
-    let imageUrl = null;
-    if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+    // Construir URLs de imágenes si se subieron archivos
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map(file => `/uploads/products/${file.filename}`);
     }
+
+    console.log('📸 Imágenes procesadas:', imageUrls.length);
 
     const productData = {
       name,
@@ -170,7 +205,7 @@ router.post('/', auth.authenticateToken, upload.single('image'), async (req, res
       unit: unit || 'kg',
       stock: (inStock === 'true' || inStock === true) ? 100 : 0,
       isFeatured: isFeatured === 'true' || isFeatured === true,
-      images: imageUrl
+      images: JSON.stringify(imageUrls) // Guardar como JSON string
     };
 
     const product = await prisma.product.create({
@@ -189,20 +224,22 @@ router.post('/', auth.authenticateToken, upload.single('image'), async (req, res
       category: product.category.name,
       unit: product.unit,
       inStock: product.stock > 0,
-      imageUrl: product.images,
+      imageUrl: product.images ? JSON.parse(product.images) : [], // Parsear JSON a array
       isFeatured: product.isFeatured,
       stock: product.stock
     };
 
-    console.log('✅ Producto creado:', product.name);
+    console.log('✅ Producto creado:', product.name, 'con', imageUrls.length, 'imágenes');
     res.status(201).json(transformedProduct);
   } catch (error) {
     console.error('❌ Error al crear producto:', error);
     
-    // Si hay error, eliminar archivo subido
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('Error al eliminar archivo:', err);
+    // Si hay error, eliminar archivos subidos
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error('Error al eliminar archivo:', err);
+        });
       });
     }
     
@@ -211,7 +248,7 @@ router.post('/', auth.authenticateToken, upload.single('image'), async (req, res
 });
 
 // PUT /api/admin/products/:id - Actualizar producto (solo admin)
-router.put('/:id', auth.authenticateToken, upload.single('image'), async (req, res) => {
+router.put('/:id', auth.authenticateToken, upload.array('images', 7), async (req, res) => {
   try {
     // Verificar req.user y que sea admin
     if (!req.user) {
@@ -219,11 +256,11 @@ router.put('/:id', auth.authenticateToken, upload.single('image'), async (req, r
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
@@ -264,32 +301,66 @@ router.put('/:id', auth.authenticateToken, upload.single('image'), async (req, r
 
     // Si se cambió la categoría, buscar o crear
     if (category && category !== existingProduct.category.name) {
+      const categorySlug = createSlug(category);
       let categoryRecord = await prisma.category.findFirst({
-        where: { name: category }
+        where: {
+          OR: [
+            { name: { equals: category, mode: 'insensitive' } },
+            { slug: categorySlug }
+          ]
+        }
       });
 
       if (!categoryRecord) {
-        categoryRecord = await prisma.category.create({
-          data: {
-            name: category,
-            slug: createSlug(category)
+        // Solo crear si realmente no existe
+        try {
+          categoryRecord = await prisma.category.create({
+            data: {
+              name: category,
+              slug: categorySlug
+            }
+          });
+        } catch (createError) {
+          // Si falla por slug duplicado, buscar por slug
+          if (createError.code === 'P2002') {
+            categoryRecord = await prisma.category.findFirst({
+              where: { slug: categorySlug }
+            });
+          } else {
+            throw createError;
           }
-        });
+        }
       }
 
       updateData.categoryId = categoryRecord.id;
     }
 
-    // Si se subió nueva imagen, actualizar URL y eliminar imagen anterior
-    if (req.file) {
-      updateData.images = `/uploads/${req.file.filename}`;
+    // Si se subieron nuevas imágenes, actualizar URLs y eliminar imágenes anteriores
+    if (req.files && req.files.length > 0) {
+      const newImageUrls = req.files.map(file => `/uploads/products/${file.filename}`);
+      updateData.images = JSON.stringify(newImageUrls);
       
-      // Eliminar imagen anterior si existe
+      console.log('📸 Actualizando con', req.files.length, 'nuevas imágenes');
+      
+      // Eliminar imágenes anteriores si existen
       if (existingProduct.images) {
-        const oldImagePath = path.join(__dirname, '..', existingProduct.images);
-        fs.unlink(oldImagePath, (err) => {
-          if (err) console.error('Error al eliminar imagen anterior:', err);
-        });
+        try {
+          const oldImageUrls = JSON.parse(existingProduct.images);
+          if (Array.isArray(oldImageUrls)) {
+            oldImageUrls.forEach(imageUrl => {
+              const oldImagePath = path.join(__dirname, '..', imageUrl);
+              fs.unlink(oldImagePath, (err) => {
+                if (err) console.error('Error al eliminar imagen anterior:', err);
+              });
+            });
+          }
+        } catch (e) {
+          // Si no se puede parsear, asumir que es una URL string (formato anterior)
+          const oldImagePath = path.join(__dirname, '..', existingProduct.images);
+          fs.unlink(oldImagePath, (err) => {
+            if (err) console.error('Error al eliminar imagen anterior:', err);
+          });
+        }
       }
     }
 
@@ -308,7 +379,7 @@ router.put('/:id', auth.authenticateToken, upload.single('image'), async (req, r
       category: product.category.name,
       unit: product.unit,
       inStock: product.stock > 0,
-      imageUrl: product.images,
+      imageUrl: product.images ? JSON.parse(product.images) : [], // Parsear JSON a array
       isFeatured: product.isFeatured,
       stock: product.stock
     };
@@ -318,10 +389,12 @@ router.put('/:id', auth.authenticateToken, upload.single('image'), async (req, r
   } catch (error) {
     console.error('❌ Error al actualizar producto:', error);
     
-    // Si hay error, eliminar archivo subido
-    if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('Error al eliminar archivo:', err);
+    // Si hay error, eliminar archivos subidos
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error('Error al eliminar archivo:', err);
+        });
       });
     }
     
@@ -338,11 +411,11 @@ router.delete('/:id', auth.authenticateToken, async (req, res) => {
       req.user = {
         id: 1,
         email: 'admin@marvera.com',
-        role: 'admin'
+        role: 'ADMIN'
       };
     }
     
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 

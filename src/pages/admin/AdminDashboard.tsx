@@ -11,8 +11,11 @@ import {
   ArchiveBoxIcon,
   TagIcon,
   ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon
+  ArrowTrendingDownIcon,
+  PhotoIcon,
+  PlayIcon
 } from '@heroicons/react/24/outline';
+import { FRONTEND_ROUTES } from '../../config/routes';
 
 const AdminDashboard: React.FC = () => {
   
@@ -61,7 +64,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Gestión de Sucursales',
       description: 'Administra las sucursales de MarVera',
       icon: BuildingStorefrontIcon,
-      href: '/admin/branches',
+      href: FRONTEND_ROUTES.ADMIN.BRANCHES,
       gradient: 'from-blue-500 to-blue-600',
       image: '🏢'
     },
@@ -69,7 +72,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Gestión de Productos',
       description: 'Catálogo de productos y mariscos',
       icon: CubeIcon,
-      href: '/admin/products',
+      href: FRONTEND_ROUTES.ADMIN.PRODUCTS,
       gradient: 'from-green-500 to-green-600',
       image: '🐟'
     },
@@ -77,15 +80,31 @@ const AdminDashboard: React.FC = () => {
       title: 'Gestión de Categorías',
       description: 'Administra las categorías de productos',
       icon: TagIcon,
-      href: '/admin/categories',
+      href: FRONTEND_ROUTES.ADMIN.CATEGORIES,
       gradient: 'from-yellow-500 to-yellow-600',
       image: '🏷️'
+    },
+    {
+      title: 'Ofertas Especiales',
+      description: 'Gestión de ofertas y promociones',
+      icon: PhotoIcon,
+      href: FRONTEND_ROUTES.ADMIN.OFFERS,
+      gradient: 'from-pink-500 to-pink-600',
+      image: '🎯'
+    },
+    {
+      title: 'Slideshow Banner',
+      description: 'Gestión del slideshow principal',
+      icon: PlayIcon,
+      href: FRONTEND_ROUTES.ADMIN.SLIDESHOW,
+      gradient: 'from-teal-500 to-teal-600',
+      image: '🎬'
     },
     {
       title: 'Productos de Mayoreo',
       description: 'Gestión de ventas al por mayor',
       icon: ArchiveBoxIcon,
-      href: '/admin/wholesale',
+      href: FRONTEND_ROUTES.ADMIN.WHOLESALE,
       gradient: 'from-orange-500 to-orange-600',
       image: '📦'
     },
@@ -93,7 +112,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Gestión de Usuarios',
       description: 'Administra usuarios y permisos',
       icon: UsersIcon,
-      href: '/admin/users',
+      href: FRONTEND_ROUTES.ADMIN.USERS,
       gradient: 'from-purple-500 to-purple-600',
       image: '👥'
     },
@@ -101,7 +120,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Órdenes y Pedidos',
       description: 'Seguimiento de pedidos y entregas',
       icon: ClipboardDocumentListIcon,
-      href: '/admin/orders',
+      href: FRONTEND_ROUTES.ADMIN.ORDERS,
       gradient: 'from-red-500 to-red-600',
       image: '🛒'
     },
@@ -109,7 +128,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Reportes y Analytics',
       description: 'Estadísticas y reportes de ventas',
       icon: ChartBarIcon,
-      href: '/admin/analytics',
+      href: FRONTEND_ROUTES.ADMIN.ANALYTICS,
       gradient: 'from-indigo-500 to-indigo-600',
       image: '📊'
     },
@@ -117,7 +136,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Configuración',
       description: 'Configuración general del sistema',
       icon: CogIcon,
-      href: '/admin/settings',
+      href: FRONTEND_ROUTES.ADMIN.SETTINGS,
       gradient: 'from-gray-500 to-gray-600',
       image: '⚙️'
     }

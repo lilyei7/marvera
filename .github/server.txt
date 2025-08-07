@@ -1,0 +1,2 @@
+IP server: root@148.230.87.198
+Contraseña(password): Oficina808#12

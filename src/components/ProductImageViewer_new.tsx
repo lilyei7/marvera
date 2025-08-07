@@ -23,40 +23,33 @@ const ProductImageViewer: React.FC<ProductImageViewerProps> = ({
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const [hasError, setHasError] = useState(false);
 
-  // Precargar imagen actual y siguientes
+  // Gestión simple de carga de imagen actual
   useEffect(() => {
-    const preloadImages = () => {
-      // Precargar imagen actual y las 2 siguientes
-      const indicesToPreload = [
-        currentIndex,
-        (currentIndex + 1) % images.length,
-        (currentIndex + 2) % images.length
-      ];
+    if (!images || images.length === 0) return;
+    
+    const currentImage = images[currentIndex];
+    if (!currentImage) return;
 
-      indicesToPreload.forEach(index => {
-        if (!loadedImages.has(index) && images[index]) {
-          const img = new Image();
-          img.onload = () => {
-            setLoadedImages(prev => new Set([...prev, index]));
-            if (index === currentIndex) {
-              setIsLoading(false);
-            }
-          };
-          img.onerror = () => {
-            if (index === currentIndex) {
-              setHasError(true);
-              setIsLoading(false);
-            }
-          };
-          img.src = images[index];
-        }
-      });
-    };
-
-    if (images.length > 0) {
+    // Solo mostrar loading si la imagen actual no está cargada
+    if (!loadedImages.has(currentIndex)) {
       setIsLoading(true);
       setHasError(false);
-      preloadImages();
+      
+      const img = new Image();
+      img.onload = () => {
+        setLoadedImages(prev => new Set([...prev, currentIndex]));
+        setIsLoading(false);
+        setHasError(false);
+      };
+      img.onerror = () => {
+        setHasError(true);
+        setIsLoading(false);
+      };
+      img.src = currentImage;
+    } else {
+      // La imagen ya está cargada, no mostrar loading
+      setIsLoading(false);
+      setHasError(false);
     }
   }, [currentIndex, images, loadedImages]);
 
@@ -74,10 +67,9 @@ const ProductImageViewer: React.FC<ProductImageViewerProps> = ({
 
   if (!images || images.length === 0) {
     return (
-      <div className={`relative bg-gray-100 flex items-center justify-center ${className}`}>
-        <div className="text-center">
-          <div className="text-4xl mb-2">🐟</div>
-          <p className="text-gray-500 text-sm">Sin imagen</p>
+      <div className={`relative bg-gray-50 flex items-center justify-center ${className}`}>
+        <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+          <div className="w-4 h-4 bg-gray-400 rounded opacity-50"></div>
         </div>
       </div>
     );
@@ -89,24 +81,18 @@ const ProductImageViewer: React.FC<ProductImageViewerProps> = ({
     <div className={`relative group ${className}`}>
       {/* Main Image Container */}
       <div className="relative w-full h-full bg-gray-100 overflow-hidden rounded-lg">
-        {/* Loading Spinner */}
+        {/* Loading Spinner - sin emoji */}
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-            <div className="relative">
-              <div className="w-8 h-8 border-3 border-blue-200 rounded-full animate-spin border-t-primary"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-primary text-xs">🐟</span>
-              </div>
-            </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+            <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin border-t-primary"></div>
           </div>
         )}
 
-        {/* Error State */}
+        {/* Error State - sin emoji */}
         {hasError && !isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div className="text-center">
-              <div className="text-3xl mb-2">🐟</div>
-              <p className="text-gray-500 text-sm">Error al cargar</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+              <div className="w-4 h-4 bg-gray-400 rounded opacity-50"></div>
             </div>
           </div>
         )}
@@ -115,17 +101,12 @@ const ProductImageViewer: React.FC<ProductImageViewerProps> = ({
         <img
           src={currentImage}
           alt={`${productName} - Imagen ${currentIndex + 1}`}
-          className={`w-full h-full object-cover transition-all duration-500 ${
-            isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
+          className={`w-full h-full object-cover transition-all duration-300 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
           } group-hover:scale-105`}
           loading="lazy"
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setHasError(true);
-            setIsLoading(false);
-          }}
           style={{
-            filter: isLoading ? 'blur(5px)' : 'blur(0px)'
+            filter: isLoading ? 'blur(2px)' : 'blur(0px)'
           }}
         />
 

@@ -153,7 +153,7 @@ const ProductsManager: React.FC = () => {
 
   const toggleFeatured = async (product: Product) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/products/${product.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/products/${product.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -256,7 +256,6 @@ const ProductsManager: React.FC = () => {
                 src={product.image || ''}
                 alt={product.name}
                 className="w-full h-full"
-                fallbackEmoji="🐟"
                 priority={false}
               />
               

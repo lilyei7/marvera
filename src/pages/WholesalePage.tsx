@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
+import { API_ROUTES, buildApiUrl } from '../config/routes';
 import { addNotification } from '../store/slices/notificationSlice';
 
 interface WholesaleProduct {
@@ -47,19 +48,36 @@ const WholesalePage: React.FC = () => {
   const fetchWholesaleProducts = async () => {
     try {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
-      const response = await fetch(`${API_BASE_URL}/api/wholesale-products`);
+      setError(null);
+      const response = await fetch(buildApiUrl(API_ROUTES.WHOLESALE_PRODUCTS));
       
       if (!response.ok) {
         throw new Error('Error al cargar productos de mayoreo');
       }
       
       const data = await response.json();
-      setProducts(data);
+      console.log('🏪 Wholesale products data received:', data);
+      
+      // Proteger contra datos que no son array
+      let productsArray: WholesaleProduct[] = [];
+      
+      if (Array.isArray(data)) {
+        productsArray = data;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        productsArray = data.data;
+      } else if (data && data.products && Array.isArray(data.products)) {
+        productsArray = data.products;
+      } else {
+        console.warn('⚠️ Data is not in expected format:', data);
+        productsArray = [];
+      }
+      
+      console.log('🏪 Processed products array:', productsArray.length);
+      setProducts(productsArray);
       
       // Inicializar cantidades con el mínimo de pedido
       const initialQuantities: Record<number, number> = {};
-      data.forEach((product: WholesaleProduct) => {
+      productsArray.forEach((product: WholesaleProduct) => {
         initialQuantities[product.id] = product.minimumOrder;
       });
       setQuantities(initialQuantities);
@@ -73,12 +91,33 @@ const WholesalePage: React.FC = () => {
     }
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredProducts = React.useMemo(() => {
+    try {
+      if (!Array.isArray(products)) {
+        console.warn('⚠️ Products is not an array for filtering:', products);
+        return [];
+      }
+
+      return products.filter(product => {
+        try {
+          if (!product || typeof product !== 'object') {
+            return false;
+          }
+          
+          const matchesSearch = (product.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+                               (product.description || '').toLowerCase().includes((searchQuery || '').toLowerCase());
+          const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+          return matchesSearch && matchesCategory;
+        } catch (filterError) {
+          console.error('❌ Error filtering wholesale product:', filterError, product);
+          return false;
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error in filteredProducts calculation:', error);
+      return [];
+    }
+  }, [products, searchQuery, selectedCategory]);
 
   const handleQuantityChange = (productId: number, newQuantity: number) => {
     const product = products.find(p => p.id === productId);

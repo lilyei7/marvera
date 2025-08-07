@@ -6,12 +6,14 @@ import {
   ChartBarIcon,
   UsersIcon,
   ShoppingBagIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addProduct, updateProduct, deleteProduct } from '../store/slices/productsSlice';
 import MultiImageUploader from './MultiImageUploader';
 import ProductImageViewer from './ProductImageViewer';
+import OffersManager from './admin/OffersManager';
 import { ToastContainer, useToast } from './Toast';
 
 // API base URL
@@ -22,7 +24,7 @@ const AdminPanel: React.FC = () => {
   const { user } = useAppSelector((state: any) => state.auth);
   const { toasts, showSuccess, showError, removeToast } = useToast();
   
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users' | 'offers'>('dashboard');
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
@@ -268,6 +270,7 @@ const AdminPanel: React.FC = () => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: ChartBarIcon },
     { id: 'products', label: 'Productos', icon: ShoppingBagIcon },
+    { id: 'offers', label: 'Ofertas', icon: TagIcon },
     { id: 'orders', label: 'Pedidos', icon: CurrencyDollarIcon },
     { id: 'users', label: 'Usuarios', icon: UsersIcon }
   ];
@@ -487,6 +490,13 @@ const AdminPanel: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Offers Management */}
+        {activeTab === 'offers' && (
+          <div className="animate-fade-in">
+            <OffersManager />
           </div>
         )}
 

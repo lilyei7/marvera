@@ -53,6 +53,10 @@ export default {
       fontFamily: {
         'montserrat': ['Montserrat', 'sans-serif'],
       },
+      screens: {
+        'xs': '475px',
+        // sm, md, lg, xl ya están definidos por defecto
+      },
     },
   },
   plugins: [],

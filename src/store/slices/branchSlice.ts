@@ -1,15 +1,35 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
+import { getApiUrl, API_CONFIG } from '../../config/api';
 
 
 export interface Branch {
   id: number;
   name: string;
   address?: string | null;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   phone?: string | null;
+  email?: string;
+  manager?: string;
+  imageUrl?: string | null;
+  images?: string[];
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  operatingHours?: {
+    monday?: { open: string; close: string };
+    tuesday?: { open: string; close: string };
+    wednesday?: { open: string; close: string };
+    thursday?: { open: string; close: string };
+    friday?: { open: string; close: string };
+    saturday?: { open: string; close: string };
+    sunday?: { open: string; close: string };
+  };
   latitude?: number | null;
   longitude?: number | null;
-  isActive: boolean;
+  isActive?: boolean;
   openingHours?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -26,35 +46,23 @@ export const fetchBranches = createAsyncThunk(
   'branches/fetchBranches',
   async (_, { rejectWithValue }) => {
     try {
-      // Intentar con endpoint autenticado primero
       const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('🔍 No hay token, usando endpoint público');
-        // Si no hay token, usar endpoint público
-        const response = await fetch(`${API_BASE_URL}/api/branches/public`);
-        const data = await response.json();
-        if (response.ok) {
-          return data.branches || data || [];
-        }
-      }
-
-      console.log('🔍 Obteniendo sucursales desde:', `${API_BASE_URL}/api/branches`);
+      
+      console.log('🔍 Obteniendo sucursales desde:', getApiUrl(API_CONFIG.ENDPOINTS.ADMIN_BRANCHES));
       console.log('🔑 Usando token:', token ? token.substring(0, 20) + '...' : 'No token');
       
-      // Intentar endpoint autenticado
-      let response = await fetch(`${API_BASE_URL}/api/branches`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
 
-      // Si falla la autenticación, intentar endpoint de debug
-      if (response.status === 401 || response.status === 403) {
-        console.log('🔄 Error de autenticación, intentando endpoint de debug...');
-        response = await fetch(`${API_BASE_URL}/api/branches/debug`);
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
+
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN_BRANCHES), {
+        method: 'GET',
+        headers,
+      });
 
       const data = await response.json();
 
@@ -62,8 +70,10 @@ export const fetchBranches = createAsyncThunk(
         throw new Error(data.message || 'Error obteniendo sucursales');
       }
 
-      console.log('✅ Datos recibidos de sucursales:', data);
-      return data.branches || [];
+      console.log('✅ Datos recibidos de sucursales v2.0:', data);
+      
+      // La API devuelve { success: true, data: [...], message: "..." }
+      return data.data || data.branches || [];
     } catch (error) {
       console.error('❌ Error obteniendo sucursales:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Error desconocido');
@@ -76,7 +86,7 @@ export const createBranch = createAsyncThunk(
   async (branchData: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/branches`, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN_BRANCHES_CREATE), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +101,8 @@ export const createBranch = createAsyncThunk(
         throw new Error(data.message || 'Error creando sucursal');
       }
 
-      return data.branch;
+      // La API devuelve { success: true, data: {...}, message: "..." }
+      return data.data || data.branch;
     } catch (error) {
       console.error('❌ Error creando sucursal:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Error desconocido');
@@ -104,7 +115,7 @@ export const updateBranch = createAsyncThunk(
   async (branchData: Partial<Branch> & { id: number }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/branches/${branchData.id}`, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN_BRANCHES_UPDATE(branchData.id.toString())), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +130,8 @@ export const updateBranch = createAsyncThunk(
         throw new Error(data.message || 'Error actualizando sucursal');
       }
 
-      return data.branch;
+      // La API devuelve { success: true, data: {...}, message: "..." }
+      return data.data || data.branch;
     } catch (error) {
       console.error('❌ Error actualizando sucursal:', error);
       return rejectWithValue(error instanceof Error ? error.message : 'Error desconocido');
@@ -132,7 +144,7 @@ export const deleteBranch = createAsyncThunk(
   async (id: number, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/branches/${id}`, {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.ADMIN_BRANCHES_DELETE(id.toString())), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -175,7 +187,11 @@ const branchSlice = createSlice({
       })
       .addCase(fetchBranches.fulfilled, (state, action) => {
         state.loading = false;
+        console.log('🔄 [branchSlice] fetchBranches.fulfilled - payload:', action.payload);
+        console.log('🔄 [branchSlice] payload type:', typeof action.payload);
+        console.log('🔄 [branchSlice] is array:', Array.isArray(action.payload));
         state.branches = action.payload;
+        console.log('🔄 [branchSlice] state.branches updated to:', state.branches.length, 'items');
       })
       .addCase(fetchBranches.rejected, (state, action) => {
         state.loading = false;

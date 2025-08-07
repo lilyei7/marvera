@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { verifyToken } from '../store/slices/authSlice';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,42 +11,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
-  const dispatch = useAppDispatch();
   const location = useLocation();
-  const { user, isLoading, isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading, hasCheckedToken } = useAuth();
 
-  useEffect(() => {
-    // Verificar token al cargar la ruta protegida
-    const localToken = localStorage.getItem('token');
-    console.log('🛡️ ProtectedRoute - Estado actual:', {
-      isAuthenticated,
-      hasUser: !!user,
-      hasLocalToken: !!localToken,
-      hasReduxToken: !!token,
-      userEmail: user?.email,
-      userRole: user?.role,
-      isLoading
-    });
-    
-    if (localToken && !isAuthenticated && !isLoading) {
-      console.log('🔄 Token encontrado pero no autenticado - Verificando...');
-      dispatch(verifyToken());
-    }
+  console.log('🛡️ ProtectedRoute - Estado:', {
+    isAuthenticated,
+    hasUser: !!user,
+    userEmail: user?.email,
+    userRole: user?.role,
+    isLoading,
+    hasCheckedToken,
+    requireAdmin
+  });
 
-    // Timeout de emergencia para evitar loading infinito
-    const timeoutId = setTimeout(() => {
-      if (isLoading && localToken) {
-        console.log('⏰ ProtectedRoute - Timeout alcanzado, redirigiendo...');
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-    }, 15000); // 15 segundos
-
-    return () => clearTimeout(timeoutId);
-  }, [dispatch, user, isAuthenticated, token, isLoading]);
-
-  // Mostrar loading mientras se verifica la autenticación
-  if (isLoading) {
+  // Solo mostrar loading si realmente está verificando el token
+  if (isLoading && !hasCheckedToken) {
     console.log('⏳ ProtectedRoute - Cargando...');
     return (
       <div className="min-h-screen flex items-center justify-center">

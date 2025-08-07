@@ -7,6 +7,7 @@ export interface Product {
   price: number;
   category: ProductCategory;
   imageUrl?: string;
+  images?: string[]; // Array of image URLs
   inStock: boolean;
   origin?: string;
   freshness?: string;

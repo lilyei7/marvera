@@ -118,29 +118,6 @@ model WholesaleProduct {
   @@map("wholesale_products")
 }
 
-// Modelo de Sucursal (sin campo gerente)
-model Branch {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  address      String?
-  city         String?
-  state        String?
-  postalCode   String?
-  phone        String?
-  email        String?
-  latitude     Float?
-  longitude    Float?
-  openingHours String?
-  services     String?
-  description  String?
-  image        String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@map("branches")
-}
-
 // Modelo de Conductor
 model Driver {
   id        Int      @id @default(autoincrement())
@@ -247,4 +224,64 @@ model WholesaleOrderItem {
   wholesaleProduct WholesaleProduct @relation(fields: [wholesaleProductId], references: [id])
 
   @@map("wholesale_order_items")
+}
+
+// Modelo de Sucursal
+model Branch {
+  id            Int      @id @default(autoincrement())
+  name          String
+  address       String?
+  phone         String?
+  latitude      Float?
+  longitude     Float?
+  openingHours  String?
+  isActive      Boolean  @default(true)
+  imageUrl      String?  // URL de la imagen principal
+  images        String?  // JSON array de URLs de imágenes adicionales
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("branches")
+}
+
+// Modelo de Ofertas Especiales
+model SpecialOffer {
+  id               Int      @id @default(autoincrement())
+  title            String   // Título de la oferta
+  description      String   // Descripción de la oferta
+  originalPrice    Float    // Precio original
+  discountPrice    Float    // Precio con descuento
+  discountPercent  Float?   // Porcentaje de descuento
+  imageUrl         String?  // Imagen de la oferta
+  backgroundColor  String   @default("#1E3A8A") // Color de fondo del card
+  isActive         Boolean  @default(true)
+  isFeatured       Boolean  @default(false) // Si aparece en homepage
+  validFrom        DateTime @default(now())
+  validUntil       DateTime?
+  productIds       String?  // JSON array de IDs de productos incluidos
+  maxRedemptions   Int?     // Máximo número de canjes
+  currentRedemptions Int    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("special_offers")
+}
+
+// Modelo de Slideshow para el banner principal
+model Slideshow {
+  id          Int      @id @default(autoincrement())
+  title       String   // Título principal del slide
+  subtitle    String?  // Subtítulo opcional
+  description String?  // Descripción del slide
+  buttonText  String?  // Texto del botón de acción
+  buttonLink  String?  // Enlace del botón
+  imageUrl    String?  // Imagen de fondo del slide
+  backgroundColor String @default("#1E3A8A") // Color de fondo de respaldo
+  textColor   String   @default("#FFFFFF") // Color del texto
+  isActive    Boolean  @default(true)
+  order       Int      @default(0) // Orden de aparición en el slideshow
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("slideshow")
 }

@@ -11,7 +11,6 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onClick }) => {
   const [quantity, setQuantity] = useState(1);
-  const [isHovered, setIsHovered] = useState(false);
 
   const handleQuantityChange = (change: number, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -22,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onClick
   const handleAddToCart = (event: React.MouseEvent) => {
     event.stopPropagation();
     onAddToCart(product, quantity);
-    setQuantity(1); // Reset quantity after adding
+    setQuantity(1);
   };
 
   const formatPrice = (price: number) => {
@@ -51,167 +50,148 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, onClick
   };
 
   return (
-    <div
-      className="product-card group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-primary/20 w-full max-w-full min-w-0"
+    <article 
+      className="group cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:border-primary/30 h-full flex flex-col touch-manipulation select-none"
       onClick={() => onClick(product)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{maxWidth: '100vw'}}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
-      {/* Image Container Optimizado */}
-      <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden min-w-0">
-        {/* Product Images con componente optimizado */}
+      {/* Image Container - Altura responsiva mejorada con aspectRatio fijo - MÁS GRANDE MÓVIL */}
+      <div className="relative w-full h-56 xs:h-64 sm:h-72 md:h-80 lg:h-88 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex-shrink-0">
         {product.images && product.images.length > 0 ? (
-          <div className="w-full h-full min-w-0">
-            <ProductImageViewer
-              images={product.images}
-              productName={product.name}
-              className="w-full h-full min-w-0"
-              showDots={product.images.length > 1}
-              showCounter={product.images.length > 1}
-              showThumbnails={false}
-            />
-          </div>
+          <ProductImageViewer
+            images={product.images}
+            productName={product.name}
+            className="w-full h-full"
+            showDots={false}
+            showCounter={false}
+            showThumbnails={false}
+          />
         ) : (
-          <div className="relative w-full h-full min-w-0">
-            <OptimizedImage
-              src={product.imageUrl || ''}
-              alt={product.name}
-              className="w-full h-full"
-              fallbackEmoji="🐟"
-              priority={false}
-            />
+          <OptimizedImage
+            src={product.imageUrl || ''}
+            alt={product.name}
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 p-2"
+            priority={true}
+            size="medium"
+          />
+        )}
+
+        {/* Freshness Badge - MÁS GRANDE MÓVIL */}
+        {product.freshness && (
+          <div className="absolute top-2 left-2 z-20">
+            <span className={`px-3 py-2 xs:px-2 xs:py-1 rounded-full text-sm xs:text-xs font-semibold shadow-md ${
+              product.freshness === 'Ultra Fresh' 
+                ? 'bg-green-500 text-white'
+                : product.freshness === 'Fresh'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-gray-500 text-white'
+            }`}>
+              {product.freshness}
+            </span>
           </div>
         )}
 
-        {/* Freshness Badge */}
-        <div className="absolute top-3 left-3 z-20">
-          <span className={`px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm ${
-            product.freshness === 'Ultra Fresh' 
-              ? 'bg-green-500 text-white'
-              : product.freshness === 'Fresh'
-              ? 'bg-emerald-500 text-white'
-              : 'bg-gray-500 text-white'
-          }`}>
-            {product.freshness}
-          </span>
-        </div>
-
-        {/* Stock Badge */}
+        {/* Stock Badge - MÁS GRANDE MÓVIL */}
         {!product.inStock && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-30">
-            <span className="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold text-base">
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
+            <span className="bg-red-500 text-white px-4 py-3 xs:px-3 xs:py-2 rounded-lg font-semibold text-base xs:text-sm">
               Agotado
             </span>
           </div>
         )}
-
-        {/* Quick Add Button (appears on hover) */}
-        {product.inStock && (
-          <div className={`absolute bottom-3 right-3 z-20 transition-all duration-300 ${
-            isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-          }`}>
-            <button
-              onClick={handleAddToCart}
-              className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-            >
-              <PlusIcon className="h-5 w-5" />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Product Info Optimizado */}
-      <div className="p-3 sm:p-4 lg:p-5 space-y-3 lg:space-y-4 min-w-0">
-        {/* Product Name */}
-        <h3 className="font-bold text-gray-900 text-base sm:text-lg lg:text-xl line-clamp-2 group-hover:text-primary transition-colors duration-200 leading-tight break-words min-w-0">
-          {product.name}
-        </h3>
+      {/* Product Info - Padding responsivo mejorado + FUENTES MÁS GRANDES MÓVIL */}
+      <div className="p-4 xs:p-3 sm:p-4 md:p-5 flex flex-col flex-grow">
+        {/* Top Section - Name and Description */}
+        <div className="flex-grow mb-4 xs:mb-3 sm:mb-4">
+          <h3 className="font-bold text-gray-900 text-lg xs:text-sm sm:text-base md:text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-200 mb-3 xs:mb-2">
+            {product.name}
+          </h3>
 
-        {/* Price and Unit - Responsive Layout */}
-        <div className="flex items-start justify-between gap-2 min-w-0">
-          <div className="flex flex-col space-y-1 min-w-0">
-            <span className="product-price text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 min-w-0">
-              {formatPrice(product.price)}
-            </span>
-            <span className="unit-label text-xs sm:text-sm text-gray-600 font-medium min-w-0">
-              {getUnitLabel(product.unit)}
-            </span>
-          </div>
-          
-          {/* Weight/Size Info - Better positioning */}
-          {product.weight && (
-            <div className="text-right flex-shrink-0 min-w-0">
-              <div className="bg-gray-100 px-2 py-1 rounded-full min-w-0">
-                <span className="text-xs sm:text-sm text-gray-700 font-medium min-w-0">
+          {product.description && (
+            <p className="text-gray-600 text-sm xs:text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3 xs:mb-2 sm:mb-3">
+              {product.description}
+            </p>
+          )}
+
+          {/* Price Section - FUENTES MÁS GRANDES MÓVIL */}
+          <div className="mb-3 xs:mb-2 sm:mb-3">
+            <div className="flex items-center justify-between mb-2 xs:mb-1">
+              <span className="text-xl xs:text-base sm:text-lg md:text-xl font-bold text-gray-900">
+                {formatPrice(product.price)}
+              </span>
+              {product.weight && (
+                <span className="bg-gray-100 px-3 py-2 xs:px-2 xs:py-1 rounded-full text-sm xs:text-xs font-medium text-gray-700">
                   {product.weight} {product.unit}
                 </span>
-              </div>
+              )}
+            </div>
+            <div className="text-sm xs:text-xs sm:text-sm text-gray-600">
+              {getUnitLabel(product.unit)}
+            </div>
+          </div>
+
+          {/* Origin - MÁS GRANDE MÓVIL */}
+          {product.origin && (
+            <div className="flex items-center text-sm xs:text-xs sm:text-sm text-gray-500">
+              <span className="mr-1">📍</span>
+              <span>{product.origin}</span>
             </div>
           )}
         </div>
 
-        {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
-          {product.description}
-        </p>
-
-        {/* Origin */}
-        <div className="flex items-center text-sm text-gray-500">
-          <span className="mr-2 text-base">📍</span>
-          <span className="font-medium">{product.origin}</span>
-        </div>
-
-        {/* Quantity and Add to Cart */}
-        {product.inStock && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 pt-3 border-t border-gray-100">
-            {/* Quantity Selector */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">Cantidad:</span>
-              <div className="flex items-center border border-gray-300 rounded-lg">
-                <button
-                  onClick={(e) => handleQuantityChange(-1, e)}
-                  disabled={quantity <= 1}
-                  className="p-2.5 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-lg"
-                >
-                  <MinusIcon className="h-4 w-4" />
-                </button>
-                <span className="px-3 py-2.5 min-w-[45px] text-center text-sm font-medium">
-                  {quantity}
-                </span>
-                <button
-                  onClick={(e) => handleQuantityChange(1, e)}
-                  className="p-2.5 hover:bg-gray-100 rounded-r-lg"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </button>
+        {/* Bottom Section - Controls con layout mejorado + BOTONES MÁS GRANDES MÓVIL */}
+        <div className="mt-auto space-y-3 xs:space-y-2 sm:space-y-3">
+          {product.inStock ? (
+            <>
+              {/* Quantity Selector - Centrado y compacto con mejor táctil + MÁS GRANDE MÓVIL */}
+              <div className="flex items-center justify-center">
+                <div className="flex items-center border border-gray-300 rounded-lg bg-white shadow-sm">
+                  <button
+                    onClick={(e) => handleQuantityChange(-1, e)}
+                    disabled={quantity <= 1}
+                    className="w-12 h-12 xs:w-10 xs:h-10 sm:w-11 sm:h-11 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-lg transition-colors touch-manipulation active:bg-gray-100"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <MinusIcon className="h-5 w-5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  <span className="px-5 xs:px-4 sm:px-5 py-3 xs:py-2 text-base xs:text-sm font-medium min-w-[60px] xs:min-w-[50px] sm:min-w-[60px] text-center bg-gray-50">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={(e) => handleQuantityChange(1, e)}
+                    className="w-12 h-12 xs:w-10 xs:h-10 sm:w-11 sm:h-11 flex items-center justify-center hover:bg-gray-50 rounded-r-lg transition-colors touch-manipulation active:bg-gray-100"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <PlusIcon className="h-5 w-5 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              className="btn-add-to-cart bg-button hover:bg-primary text-white px-5 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2 w-full sm:w-auto text-sm"
-            >
-              <span className="text-base">🛒</span>
-              <span>Agregar</span>
-            </button>
-          </div>
-        )}
-
-        {/* Out of Stock Message */}
-        {!product.inStock && (
-          <div className="pt-3 border-t border-gray-100">
+              {/* Add to Cart Button - Responsivo y nunca se desborda con mejor táctil + MÁS GRANDE MÓVIL */}
+              <button
+                onClick={handleAddToCart}
+                className="w-full bg-primary hover:bg-primary/90 text-white py-4 xs:py-3 sm:py-3.5 px-4 xs:px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 hover:shadow-md active:scale-[0.96] active:bg-primary/80 flex items-center justify-center space-x-2 xs:space-x-1 sm:space-x-2 text-base xs:text-xs sm:text-sm md:text-base touch-manipulation"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <span className="text-base xs:text-sm">🛒</span>
+                <span className="hidden xs:inline">Agregar al Carrito</span>
+                <span className="xs:hidden">Agregar al Carrito</span>
+              </button>
+            </>
+          ) : (
             <button
               disabled
-              className="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-medium cursor-not-allowed text-sm"
+              className="w-full bg-gray-300 text-gray-500 py-4 xs:py-3 sm:py-3.5 rounded-lg font-medium cursor-not-allowed text-base xs:text-xs sm:text-sm touch-manipulation"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              Producto Agotado
+              Agotado
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </article>
   );
 };
 

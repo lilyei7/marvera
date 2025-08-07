@@ -299,21 +299,21 @@ router.post('/:id/toggle-status', authenticateToken, requireAdmin, async (req, r
   }
 });
 
-// GET sucursales por ciudad
-router.get('/city/:city', async (req, res) => {
+// GET buscar sucursales
+router.get('/search/:query', async (req, res) => {
   try {
-    const city = req.params.city;
-    const branches = await BranchService.getBranchesByCity(city);
+    const query = req.params.query;
+    const branches = await BranchService.searchBranches(query);
     
     res.json({
       success: true,
       branches
     });
   } catch (error) {
-    console.error('Error fetching branches by city:', error);
+    console.error('Error searching branches:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener sucursales por ciudad'
+      message: 'Error al buscar sucursales'
     });
   }
 });

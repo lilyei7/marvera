@@ -165,26 +165,25 @@ export class AuthService {
 
   static async createAdminUser(): Promise<void> {
     try {
-      // Verificar si ya existe un admin
-      const existingAdmin = await prisma.user.findFirst({
+      // Eliminar cualquier usuario admin existente (tanto 'admin' como 'admin@marvera.com')
+      await prisma.user.deleteMany({
         where: {
-          email: 'admin',
+          OR: [
+            { email: 'admin' },
+            { email: 'admin@marvera.com' }
+          ],
           role: 'ADMIN'
         }
       });
+      console.log('🗑️ Usuarios admin anteriores eliminados');
 
-      if (existingAdmin) {
-        console.log('✅ Usuario admin ya existe en la base de datos');
-        return;
-      }
-
-      // Crear usuario admin
+      // Crear usuario admin con las nuevas credenciales
       console.log('🔨 Creando usuario admin...');
-      const hashedPassword = await bcrypt.hash('admin', 10);
+      const hashedPassword = await bcrypt.hash('admin123', 10);
 
       await prisma.user.create({
         data: {
-          email: 'admin',
+          email: 'admin@marvera.com',
           password: hashedPassword,
           firstName: 'Administrador',
           lastName: 'MarVera',
@@ -193,7 +192,7 @@ export class AuthService {
         }
       });
 
-      console.log('✅ Usuario admin creado - email: admin, password: admin');
+      console.log('✅ Usuario admin creado - email: admin@marvera.com, password: admin123');
     } catch (error) {
       console.error('❌ Error creando usuario admin:', error);
     }

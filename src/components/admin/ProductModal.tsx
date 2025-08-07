@@ -9,7 +9,7 @@ import type { Product, ProductCategory } from '../../types';
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: Partial<Product>, imageFile?: File) => void;
+  onSave: (product: Partial<Product>, imageFiles?: File[]) => void;
   product?: Product | null;
   categories: string[];
 }
@@ -34,10 +34,14 @@ const ProductModal: React.FC<ProductModalProps> = ({
     isFeatured: product?.isFeatured || false
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    product?.imageUrl || null
-  );
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>(() => {
+    if (product?.imageUrl) {
+      // Si imageUrl es array, usar tal cual; si es string, convertir a array
+      return Array.isArray(product.imageUrl) ? product.imageUrl : [product.imageUrl];
+    }
+    return [];
+  });
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -50,19 +54,38 @@ const ProductModal: React.FC<ProductModalProps> = ({
     }));
   };
 
-  const handleImageChange = (file: File) => {
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const handleImageChange = (files: File[]) => {
+    setImageFiles(files);
+    
+    // Crear previews para todos los archivos
+    const newPreviews: string[] = [];
+    let processedCount = 0;
+    
+    files.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        newPreviews[index] = e.target?.result as string;
+        processedCount++;
+        if (processedCount === files.length) {
+          setImagePreviews(newPreviews);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleImageChange(file);
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    // Limitar a 7 imágenes
+    if (imageFiles.length > 7) {
+      alert('Solo puedes subir un máximo de 7 imágenes');
+      imageFiles.splice(7);
+    }
+    
+    if (imageFiles.length > 0) {
+      handleImageChange(imageFiles);
     }
   };
 
@@ -81,9 +104,17 @@ const ProductModal: React.FC<ProductModalProps> = ({
     e.stopPropagation();
     setDragActive(false);
     
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleImageChange(file);
+    const files = Array.from(e.dataTransfer.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    // Limitar a 7 imágenes
+    if (imageFiles.length > 7) {
+      alert('Solo puedes subir un máximo de 7 imágenes');
+      imageFiles.splice(7);
+    }
+    
+    if (imageFiles.length > 0) {
+      handleImageChange(imageFiles);
     }
   };
 
@@ -116,7 +147,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
         ...formData,
         category: formData.category as ProductCategory
       };
-      await onSave(productData, imageFile || undefined);
+      await onSave(productData, imageFiles.length > 0 ? imageFiles : undefined);
       onClose();
       resetForm();
     } catch (error) {
@@ -140,8 +171,8 @@ const ProductModal: React.FC<ProductModalProps> = ({
       weight: 0,
       isFeatured: false
     });
-    setImageFile(null);
-    setImagePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
   };
 
   if (!isOpen) return null;
@@ -182,33 +213,57 @@ const ProductModal: React.FC<ProductModalProps> = ({
               onDragOver={handleDrag}
               onDrop={handleDrop}
             >
-              {imagePreview ? (
+              {imagePreviews.length > 0 ? (
                 <div className="space-y-3">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="mx-auto h-32 w-32 object-cover rounded-lg"
-                  />
+                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFiles = [...imageFiles];
+                            const newPreviews = [...imagePreviews];
+                            newFiles.splice(index, 1);
+                            newPreviews.splice(index, 1);
+                            setImageFiles(newFiles);
+                            setImagePreviews(newPreviews);
+                          }}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-center text-sm text-gray-600">
+                    {imagePreviews.length} de 7 imágenes seleccionadas
+                  </div>
                   <div className="flex justify-center space-x-2">
                     <label className="cursor-pointer inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm">
                       <PhotoIcon className="h-4 w-4 mr-2" />
-                      Cambiar imagen
+                      {imagePreviews.length > 0 ? 'Agregar más' : 'Seleccionar imágenes'}
                       <input
                         type="file"
                         className="hidden"
                         accept="image/*"
+                        multiple
                         onChange={handleFileSelect}
                       />
                     </label>
                     <button
                       type="button"
                       onClick={() => {
-                        setImageFile(null);
-                        setImagePreview(null);
+                        setImageFiles([]);
+                        setImagePreviews([]);
                       }}
                       className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                     >
-                      Quitar
+                      Quitar todas
                     </button>
                   </div>
                 </div>
@@ -220,11 +275,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       <span className="text-primary font-medium hover:text-primary-dark">
                         Haz clic para subir
                       </span>
-                      <span className="text-gray-600"> o arrastra una imagen aquí</span>
+                      <span className="text-gray-600"> o arrastra hasta 7 imágenes aquí</span>
                       <input
                         type="file"
                         className="hidden"
                         accept="image/*"
+                        multiple
                         onChange={handleFileSelect}
                       />
                     </label>

@@ -5,6 +5,7 @@ import {
   ClockIcon, 
   EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import { API_ROUTES, buildApiUrl } from '../config/routes';
 
 interface Branch {
   id: number;
@@ -39,17 +40,18 @@ const BranchesPage: React.FC = () => {
       setLoading(true);
       console.log('🔄 Cargando sucursales desde la base de datos...');
       
-      // Usar la URL completa del backend
-      const API_BASE_URL = import.meta.env.DEV ? 'https://marvera.mx' : 'https://marvera.mx';
-      const response = await fetch(`${API_BASE_URL}/api/branches/public`);
+      // Usar la URL centralizada del sistema de rutas
+      const response = await fetch(buildApiUrl(API_ROUTES.BRANCHES.PUBLIC));
       
       console.log('📡 Response status:', response.status);
       const data = await response.json();
       console.log('📦 Datos recibidos:', data);
       
       if (response.ok && data.success) {
-        setBranches(data.branches || []);
-        console.log('✅ Sucursales cargadas:', data.branches?.length || 0);
+        // Los datos vienen en data.data según el backend
+        const branchesData = data.data || data.branches || [];
+        setBranches(branchesData);
+        console.log('✅ Sucursales cargadas:', branchesData.length);
       } else {
         setError(data.message || 'Error al cargar sucursales');
         console.error('❌ Error en respuesta:', data);
